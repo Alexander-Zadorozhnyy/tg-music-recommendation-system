@@ -1,9 +1,7 @@
 import aiohttp
 import json
-import os
-from typing import Optional, Dict, Any
 
-from app.config import settings
+from config import settings
 
 CATALOG_ID = settings.YANDEX_CATALOG_ID
 API_TOKEN = settings.YANDEX_API_TOKEN

@@ -1,0 +1,40 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  tg_bot:
+    build:
+      context: ./tg_bot
+      dockerfile: ./Dockerfile
+    environment:
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_DEFAULT_DATABASE=postgres
+      - PG_DATABASE=music
+    restart: always
+    stdin_open: true # -i
+    tty: true # -t
+    depends_on:
+      postgres:
+        condition: service_healthy # Wait for postgres to be healthy
+
+volumes:
+  postgres_data:

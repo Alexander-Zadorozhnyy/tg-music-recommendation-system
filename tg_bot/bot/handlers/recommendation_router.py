@@ -1,14 +1,14 @@
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from app.bot.states.bot_state import RecommendationStates
-from app.bot.utils.utils import (
+from bot.states.bot_state import RecommendationStates
+from bot.utils.utils import (
     get_response_based_on_free_form_request,
     get_response_based_on_similar_tracks,
     smart_parse_tracks_input,
 )
-import app.db.requests as rq
-import app.bot.keyboards as kb
+import db.requests as rq
+import bot.keyboards as kb
 
 recommendation_router = Router()
 

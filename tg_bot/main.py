@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from app.bot.create_bot import dp, stop_bot, start_bot, bot
-from app.bot.handlers import recommendation_router, user_router
+from bot.create_bot import dp, stop_bot, start_bot, bot
+from bot.handlers import recommendation_router, user_router
 
-from app.db import async_main
+from db import async_main
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
