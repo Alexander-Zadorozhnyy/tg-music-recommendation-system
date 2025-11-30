@@ -40,7 +40,7 @@ async def recommendations_by_history(message: Message):
                 "📝 У вас пока недостаточно истории прослушиваний.\n"
                 "Попробуйте другие методы рекомендаций или оцените несколько треков!"
             )
-    except Exception as e:
+    except Exception:
         await message.answer(
             "❌ Произошла ошибка при получении рекомендаций. Попробуйте позже."
         )
@@ -120,7 +120,7 @@ async def process_tracks_input(message: Message, state: FSMContext):
         # Deleting the "Processing in progress" message if it has been sent
         try:
             await processing_msg.delete()
-        except:
+        except Exception:
             pass
 
 
@@ -141,7 +141,7 @@ async def process_free_form_request(message: Message, state: FSMContext):
         await message.answer(response)
         await state.clear()
 
-    except Exception as e:
+    except Exception:
         await message.answer(
             "❌ Не удалось обработать запрос. Попробуйте сформулировать иначе."
         )

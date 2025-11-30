@@ -36,7 +36,7 @@ async def music_statistics(message: Message):
             f"👑 Топ-исполнитель: {stats['top_artist']}\n"
             f"📅 Активность: {stats['activity_level']}"
         )
-    except Exception as e:
+    except Exception:
         await message.answer("❌ Не удалось загрузить статистику.")
 
 

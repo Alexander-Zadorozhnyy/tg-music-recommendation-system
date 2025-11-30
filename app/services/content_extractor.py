@@ -19,7 +19,7 @@ class ContentExtractor:
             }
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    f"http://127.0.0.1:5555/recognize", json=payload
+                    "http://127.0.0.1:5555/recognize", json=payload
                 )
                 if response.status_code == 200:
                     return f'[ИЗОБРАЖЕНИЕ] {response.json()["text"]}. [Подпись к заданию] {caption}'

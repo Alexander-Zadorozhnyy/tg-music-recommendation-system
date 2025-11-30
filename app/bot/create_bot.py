@@ -26,12 +26,12 @@ bot.send_message = capture_send_message
 async def start_bot():
     try:
         await bot.send_message(settings.ADMIN_ID, "Я запущен 🥳.")
-    except:
+    except Exception:
         pass
 
 
 async def stop_bot():
     try:
         await bot.send_message(settings.ADMIN_ID, "Бот остановлен 😔.")
-    except:
+    except Exception:
         pass
