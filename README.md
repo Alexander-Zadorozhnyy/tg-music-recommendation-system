@@ -62,3 +62,35 @@ uvicorn app.main:app --port 8080
 ├── app/
 │   ├── main.py              # The main application
 ```
+
+## Code Style & Linting (pre-commit)
+
+We use **[pre-commit](https://pre-commit.com/)** to automatically check and format code on every commit.
+
+### Setup
+
+1. Install pre-commit (preferably in your development environment or virtualenv):
+
+   ```bash
+   pip install pre-commit
+   ```
+
+2. Install the pre-commit hooks in this repository:
+
+   ```bash
+   # This will run automatically on every git commit
+   pre-commit install
+   ```
+
+### Run manually
+
+   ```bash
+   # Run on all files
+   pre-commit run --all-files
+
+   # Run only flake8
+   pre-commit run flake8 --all-files
+
+   # Run on staged files only
+   pre-commit run
+   ```
