@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
-from app.services.prompts import EducationalPrompts
+from services.prompts import EducationalPrompts
 
 
 @dataclass

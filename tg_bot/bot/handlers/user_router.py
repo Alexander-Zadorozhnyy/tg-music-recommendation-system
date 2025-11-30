@@ -2,8 +2,8 @@ from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-import app.db.requests as rq
-import app.bot.keyboards as kb
+import db.requests as rq
+import bot.keyboards as kb
 
 user_router = Router()
 

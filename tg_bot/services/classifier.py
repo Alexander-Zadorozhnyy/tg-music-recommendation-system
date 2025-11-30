@@ -1,6 +1,6 @@
 from typing import Dict, Any
-from app.services.llm_service import YandexGPTService
-from app.services.prompts import EducationalPrompts
+from services.llm_service import YandexGPTService
+from services.prompts import EducationalPrompts
 
 
 class QuestionClassifier:

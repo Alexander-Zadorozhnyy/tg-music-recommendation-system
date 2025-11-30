@@ -1,10 +1,10 @@
-from app.db import async_session
-from app.db.models.conversation_message import ConversationMessage
-from app.db.models.user import User
-from app.db.models.question import Question, InputKind
-from app.db.models.run import Run, RunMode, RunStatus
-from app.db.models.solution_step import SolutionStep
-from app.db.models.attachment import Attachment
+from db import async_session
+from db.models.conversation_message import ConversationMessage
+from db.models.user import User
+from db.models.question import Question, InputKind
+from db.models.run import Run, RunMode, RunStatus
+from db.models.solution_step import SolutionStep
+from db.models.attachment import Attachment
 from sqlalchemy import select, desc
 
 

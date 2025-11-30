@@ -15,5 +15,5 @@ exclude =
     __pycache__/
     .git/
     .tox/
-    app/db/*
-    app/services/*
+    tg_bot/db/*
+    tg_bot/services/*

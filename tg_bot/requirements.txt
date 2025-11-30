@@ -3,6 +3,5 @@ aiogram
 pydentic
 sqlalchemy
 pydantic-settings
-psycopg2
 asyncpg
 pre-commit
