@@ -19,48 +19,58 @@ git clone <URL репозитория>
 cd tg-music-recommendation-system
 ```
 
-### 2. Creating a virtual environment
+### 2. Install docker (optional, if not already installed) - <https://docs.docker.com/engine/install/>
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # for  Linux/MacOS
-# or venv\Scripts\activate  # for Windows
+sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
+
+# Add Docker's official GPG key:
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update
+
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Check docker status
+sudo systemctl status docker
+
+# Verify that the installation is successful by running the hello-world image
+sudo docker run hello-world
 ```
 
-### 3. Installing dependencies
+### 3. Setting up Environment Variables
+
+Create a `.env` file in the tg_bot directory of the project and add the following variables:
 
 ```bash
-pip install --upgrade pip
-# pip install psycopg2-binary
-# pip install python-multipart
-# sudo apt-get install build-essential libssl-dev libffi-dev python3-dev
-pip install -r requirements.txt
+cd tg_bot/
+nano .env
 ```
 
-### 4. Setting up Environment Variables
-
-Create a `.env` file in the root directory of the project and add the following variables:
+File structure as in tg_bot/.env.example
 
 ```env
-PG_USER = "postgres"
-PG_PASSWORD = 'postgres'
-PG_HOST = PG_HOST
-PG_PORT = 5432
-PG_DATABASE = PG_DATABASE
-PG_DEFAULT_DATABASE = 'postgres'
+BOT_TOKEN = your_telegram_bot_token
+ADMIN_ID = tg_admin_id
 ```
 
-### 5. Launching the main Telegram Bot application
+### 4. Launching the Telegram Bot application
 
 ```bash
-uvicorn app.main:app --port 8080
-```
-
-## Project structure
-
-```md
-├── app/
-│   ├── main.py              # The main application
+docker.exe compose -f .\docker-compose.yml up
 ```
 
 ## Code Style & Linting (pre-commit)
