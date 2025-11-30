@@ -15,8 +15,5 @@ exclude =
     __pycache__/
     .git/
     .tox/
-    app/db/
-
-    # or with wildcards
-    docs/conf.py
-    */migrations/*
+    app/db/*
+    app/services/*
