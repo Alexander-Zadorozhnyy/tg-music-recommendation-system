@@ -4,7 +4,9 @@ from aiogram.enums import ParseMode
 
 from app.config import settings
 
-bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(
+    token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
 dp = Dispatcher()
 
 last_bot_messages: dict[int, str] = {}
@@ -23,13 +25,13 @@ bot.send_message = capture_send_message
 
 async def start_bot():
     try:
-        await bot.send_message(settings.ADMIN_ID, 'Я запущен 🥳.')
+        await bot.send_message(settings.ADMIN_ID, "Я запущен 🥳.")
     except:
         pass
 
 
 async def stop_bot():
     try:
-        await bot.send_message(settings.ADMIN_ID, 'Бот остановлен 😔.')
+        await bot.send_message(settings.ADMIN_ID, "Бот остановлен 😔.")
     except:
         pass

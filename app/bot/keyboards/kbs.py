@@ -7,7 +7,9 @@ from app.config import settings
 def main_keyboard(user_id: int, first_name: str) -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     url_applications = f"{settings.BASE_SITE}/applications?user_id={user_id}"
-    url_add_application = f'{settings.BASE_SITE}/form?user_id={user_id}&first_name={first_name}'
+    url_add_application = (
+        f"{settings.BASE_SITE}/form?user_id={user_id}&first_name={first_name}"
+    )
     kb.button(text="🌐 Мои заявки", web_app=WebAppInfo(url=url_applications))
     kb.button(text="📝 Оставить заявку", web_app=WebAppInfo(url=url_add_application))
     kb.button(text="ℹ️ О нас")
@@ -35,7 +37,9 @@ def admin_keyboard(user_id: int) -> InlineKeyboardMarkup:
 
 def app_keyboard(user_id: int, first_name: str) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    url_add_application = f'{settings.BASE_SITE}/form?user_id={user_id}&first_name={first_name}'
+    url_add_application = (
+        f"{settings.BASE_SITE}/form?user_id={user_id}&first_name={first_name}"
+    )
     kb.button(text="📝 Оставить заявку", web_app=WebAppInfo(url=url_add_application))
     kb.adjust(1)
     return kb.as_markup()

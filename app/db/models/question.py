@@ -18,6 +18,8 @@ class Question(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     input_kind: Mapped[InputKind] = mapped_column(Enum(InputKind), nullable=False)
     type_text: Mapped[str] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
     runs: Mapped[list["Run"]] = relationship(back_populates="question")

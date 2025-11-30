@@ -60,5 +60,5 @@ uvicorn app.main:app --port 8080
 
 ```md
 ├── app/
-│   ├── main.py              # The main application 
+│   ├── main.py              # The main application
 ```

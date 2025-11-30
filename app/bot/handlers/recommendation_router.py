@@ -81,7 +81,7 @@ async def free_form_recommendation(message: Message, state: FSMContext):
 async def process_tracks_input(message: Message, state: FSMContext):
     user_input = message.text.strip()
 
-    tracks = await smart_parse_tracks_input(user_input) # TODO: Replace with LLM SO
+    tracks = await smart_parse_tracks_input(user_input)  # TODO: Replace with LLM SO
 
     if not tracks:
         await message.answer(
@@ -111,6 +111,7 @@ async def process_tracks_input(message: Message, state: FSMContext):
     except Exception as e:
         await message.answer("❌ Произошла ошибка при поиске. Попробуйте позже.")
         import traceback
+
         traceback.print_exc()
         print(f"Error in similar tracks: {e}")
 

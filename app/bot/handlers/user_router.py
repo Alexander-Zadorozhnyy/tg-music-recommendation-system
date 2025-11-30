@@ -38,8 +38,8 @@ async def music_statistics(message: Message):
         )
     except Exception as e:
         await message.answer("❌ Не удалось загрузить статистику.")
-        
-        
+
+
 @user_router.message(F.text == "Назад ◀️")
 async def back_to_menu(message: Message, state: FSMContext):
     await state.clear()
