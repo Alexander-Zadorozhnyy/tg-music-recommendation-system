@@ -1,21 +1,17 @@
-name: Lint
+name: flake8 Lint
+
 on: [push, pull_request]
 
 jobs:
-  lint:
+  flake8-lint:
     runs-on: ubuntu-latest
+    name: Lint
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Check out source repository
+        uses: actions/checkout@v3
+      - name: Set up Python environment
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.8'  # Use Python 3.8+ (3.7 is EOL; avoids crypto warning)
-      - name: Pin markupsafe for lintly compatibility
-        run: |
-          pip install "markupsafe==2.0.1"
-      - name: Run Lintly-Flake8
-        uses: grantmcconnaughey/lintly-flake8-github-action@v1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          failIf: new
-          args: "."
+          python-version: "3.11"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
