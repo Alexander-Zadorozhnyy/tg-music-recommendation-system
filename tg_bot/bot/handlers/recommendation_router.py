@@ -7,7 +7,6 @@ from bot.utils.utils import (
     get_response_based_on_similar_tracks,
     smart_parse_tracks_input,
 )
-import db.requests as rq
 import bot.keyboards as kb
 
 recommendation_router = Router()
