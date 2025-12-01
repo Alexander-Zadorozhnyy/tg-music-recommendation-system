@@ -11,6 +11,7 @@ from database.database import get_db_session
 
 user_router = Router()
 
+
 @user_router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     user_id = str(message.from_user.id)
@@ -24,7 +25,7 @@ async def cmd_start(message: Message, state: FSMContext):
                 telegram_id=user_id,
                 username=message.from_user.username,
                 first_name=message.from_user.first_name,
-                last_name=message.from_user.last_name
+                last_name=message.from_user.last_name,
             )
             session.add(user)
             await session.commit()
@@ -36,9 +37,10 @@ async def cmd_start(message: Message, state: FSMContext):
     finally:
         await session.close()
 
-    await message.answer("🎵 Добро пожаловать в музыкального помощника!", reply_markup=kb.menu)
+    await message.answer(
+        "🎵 Добро пожаловать в музыкального помощника!", reply_markup=kb.menu
+    )
 
-    
 
 @user_router.message(F.text == "Моя музыкальная статистика 📊")
 async def music_statistics(message: Message):
