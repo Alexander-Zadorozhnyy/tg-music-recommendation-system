@@ -8,6 +8,15 @@ from bot.utils.utils import (
     smart_parse_tracks_input,
 )
 import bot.keyboards as kb
+from models.response import Response
+from models.request import Request
+from models.user import User
+from sqlmodel import select
+from database.database import AsyncSessionLocal
+import logging
+import json
+from service.llm_connect import LLMService
+
 
 recommendation_router = Router()
 
@@ -79,69 +88,140 @@ async def free_form_recommendation(message: Message, state: FSMContext):
 @recommendation_router.message(RecommendationStates.waiting_tracks_input)
 async def process_tracks_input(message: Message, state: FSMContext):
     user_input = message.text.strip()
-
-    tracks = await smart_parse_tracks_input(user_input)  # TODO: Replace with LLM SO
+    tracks = await smart_parse_tracks_input(user_input)
 
     if not tracks:
-        await message.answer(
-            "❌ Не удалось распознать треки. Пожалуйста, введите в формате:\n\n"
-            "<code>Исполнитель - Название трека</code>\n"
-            "<code>Исполнитель - Название трека</code>",
-            parse_mode="HTML",
-        )
+        await message.answer("❌ Не удалось распознать треки...", parse_mode="HTML")
         return
-
     if len(tracks) > 10:
         await message.answer("❌ Слишком много треков. Максимум 10.")
         return
 
     try:
-        # Show that processing is underway
         processing_msg = await message.answer("🔍 Ищу похожие треки...")
 
-        # Receive recommendations
+        # Заглушка рекомендаций
         similar_tracks = [
             ["Post Malone", "Rockstar", 30],
             ["Eminem", "Rap God", 35],
-        ]  # await rq.get_similar_tracks_by_list(tracks)
+        ]
+        response_text = get_response_based_on_similar_tracks(tracks, similar_tracks)
 
-        response = get_response_based_on_similar_tracks(tracks, similar_tracks)
-        await message.answer(response)
+        # 💾 Сохраняем в БД
+        async with AsyncSessionLocal() as session:
+            # Получаем пользователя
+            result = await session.exec(
+                select(User).where(User.telegram_id == str(message.from_user.id))
+            )
+            user = result.first()
+            if not user:
+                # Создаём, если вдруг нет (хотя /start должен был создать)
+                user = User(
+                    telegram_id=str(message.from_user.id),
+                    username=message.from_user.username,
+                    first_name=message.from_user.first_name,
+                    last_name=message.from_user.last_name,
+                )
+                session.add(user)
+                await session.commit()
+                await session.refresh(user)
+
+            # Сохраняем запрос
+            request = Request(
+                user_id=user.id,
+                song_credits=json.dumps(tracks, ensure_ascii=False),
+                query="Подбор похожих треков",
+            )
+            session.add(request)
+            await session.commit()
+            await session.refresh(request)
+
+            # Сохраняем ответ
+            response = Response(
+                user_id=user.id,
+                request_id=request.id,
+                response_text=response_text,
+            )
+            session.add(response)
+            await session.commit()
+
+        await message.answer(response_text)
+
     except Exception as e:
+        logging.error(f"❌ Ошибка в process_tracks_input: {e}")
         await message.answer("❌ Произошла ошибка при поиске. Попробуйте позже.")
-        import traceback
-
-        traceback.print_exc()
-        print(f"Error in similar tracks: {e}")
-
     finally:
         await state.clear()
-        # Deleting the "Processing in progress" message if it has been sent
         try:
             await processing_msg.delete()
-        except Exception:
-            pass
+        except Exception as e:
+            logging.error(f"Ошибка: {e}")
+            await message.answer("❌ Не удалось обработать запрос.")
 
 
 @recommendation_router.message(RecommendationStates.waiting_free_form)
 async def process_free_form_request(message: Message, state: FSMContext):
-    user_request = message.text
+    user_request = message.text.strip()
+
+    # Проверяем релевантность через LLM
     try:
-        # Используем LLM для обработки свободного запроса
-        recommendations = [
-            "Post Malone - Rockstar",
-            "Eminem - Rap God",
-        ]  # TODO: await rq.get_recommendations_by_text(user_request, message.from_user.id)
-
-        response = get_response_based_on_free_form_request(
-            user_request, recommendations
-        )
-
-        await message.answer(response)
+        is_relevant = await LLMService.is_relevant(user_request)
+        if not is_relevant:
+            await message.answer(
+                "❌ Этот запрос не связан с музыкой, рекомендациями или исполнителями.\n"
+                "Попробуйте описать, какую музыку вы ищете!"
+            )
+            await state.clear()
+            return
+    except Exception as e:
+        logging.error(f"Ошибка при проверке релевантности: {e}")
+        await message.answer("⚠️ Не удалось проверить запрос. Попробуйте позже.")
         await state.clear()
+        return
 
-    except Exception:
-        await message.answer(
-            "❌ Не удалось обработать запрос. Попробуйте сформулировать иначе."
+    # Заглушка рекомендаций
+    recommendations = [
+        "Post Malone - Rockstar",
+        "Eminem - Rap God",
+        "The Weeknd - Blinding Lights",
+    ]
+    response_text = get_response_based_on_free_form_request(
+        user_request, recommendations
+    )
+
+    # Сохраняем в БД
+    async with AsyncSessionLocal() as session:
+        result = await session.exec(
+            select(User).where(User.telegram_id == str(message.from_user.id))
         )
-        await state.clear()
+        user = result.first()
+        if not user:
+            user = User(
+                telegram_id=str(message.from_user.id),
+                username=message.from_user.username,
+                first_name=message.from_user.first_name,
+                last_name=message.from_user.last_name,
+            )
+            session.add(user)
+            await session.commit()
+            await session.refresh(user)
+
+        request = Request(
+            user_id=user.id,
+            song_credits="",
+            query=user_request,
+        )
+        session.add(request)
+        await session.commit()
+        await session.refresh(request)
+
+        response = Response(
+            user_id=user.id,
+            request_id=request.id,
+            response_text=response_text,
+        )
+        session.add(response)
+        await session.commit()
+
+    await message.answer(response_text)
+    await state.clear()

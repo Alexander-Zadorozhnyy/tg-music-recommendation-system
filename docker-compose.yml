@@ -21,7 +21,7 @@ services:
     build:
       context: ./tg_bot
     env_file:
-      - ./tg_bot/.env 
+      - ./tg_bot/.env
     restart: always
     stdin_open: true # -i
     tty: true # -t

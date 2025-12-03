@@ -1,7 +1,5 @@
-import json
-from typing import List, Dict
 from mistralai import Mistral
-from .prompt_templates import RELEVANCE_PROMPT, MUSIC_RECOMMENDATION_PROMPT
+from .prompt_templates import RELEVANCE_PROMPT
 from database.config import get_settings
 import asyncio
 from functools import partial
@@ -13,6 +11,7 @@ _mistral_client = Mistral(api_key=_SETTINGS.MISTRAL_API_KEY)
 
 
 async def call_llm(prompt: str, model: str = "mistral-small") -> str:
+    """Вызов LLM с обработкой ошибок."""
     try:
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
@@ -27,7 +26,7 @@ async def call_llm(prompt: str, model: str = "mistral-small") -> str:
         )
         return response.choices[0].message.content or ""
     except Exception as e:
-        print(f"Ошибка при вызове Mistral API: {e}")
+        logging.error(f"Ошибка при вызове Mistral API: {e}")
         return ""
 
 
@@ -37,28 +36,5 @@ class LLMService:
         """Проверяет, релевантен ли запрос теме музыки."""
         prompt = RELEVANCE_PROMPT.format(query=query)
         response = await call_llm(prompt, model="mistral-small")
+        # Ожидаем ответ "ДА" или "НЕТ"
         return response.strip().upper() == "ДА"
-
-    @staticmethod
-    async def get_music_recommendations(query: str) -> List[Dict]:
-        """Получает рекомендации по запросу от LLM."""
-        prompt = MUSIC_RECOMMENDATION_PROMPT.format(query=query)
-        response = await call_llm(prompt, model="mistral-medium")
-        try:
-            data = json.loads(response)
-            if not isinstance(data, dict) or "recommendations" not in data:
-                return []
-            recs = data["recommendations"]
-            if not isinstance(recs, list):
-                return []
-            # Дополнительно: проверить структуру каждого элемента
-            validated = []
-            for item in recs:
-                if isinstance(item, dict) and "artist" in item and "song" in item:
-                    validated.append(
-                        {"artist": str(item["artist"]), "song": str(item["song"])}
-                    )
-            return validated
-        except json.JSONDecodeError:
-            logging.warning(f"Invalid JSON from LLM: {response[:100]}...")
-            return []
