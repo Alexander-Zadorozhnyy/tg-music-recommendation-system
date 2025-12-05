@@ -9,4 +9,3 @@ COPY app ./app
 COPY data ./data
 
 CMD ["python", "-m", "app.main"]
-

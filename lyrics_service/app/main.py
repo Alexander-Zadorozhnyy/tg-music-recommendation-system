@@ -9,6 +9,7 @@ from app.rabbit_producer import send_result_message
 
 load_dotenv()
 
+
 def getenv_any(*names, default=None):
     for n in names:
         v = os.getenv(n)
@@ -16,12 +17,14 @@ def getenv_any(*names, default=None):
             return v
     return default
 
-CSV_PATH   = getenv_any("CSV_PATH", default="/data/songs.csv")
-RABBIT_HOST= getenv_any("RABBIT_HOST", "RABBITMQ_HOST", default="rabbitmq")
-RABBIT_PORT= int(getenv_any("RABBIT_PORT", "RABBITMQ_PORT", default="5672"))
-QUEUE_IN   = getenv_any("QUEUE_IN", default="fetch_lyrics")
+
+CSV_PATH = getenv_any("CSV_PATH", default="/data/songs.csv")
+RABBIT_HOST = getenv_any("RABBIT_HOST", "RABBITMQ_HOST", default="rabbitmq")
+RABBIT_PORT = int(getenv_any("RABBIT_PORT", "RABBITMQ_PORT", default="5672"))
+QUEUE_IN = getenv_any("QUEUE_IN", default="fetch_lyrics")
 
 repo = CsvLyricsRepository(CSV_PATH)
+
 
 def on_message(ch, method, properties, body):
     print("[main] Received message")
@@ -29,6 +32,7 @@ def on_message(ch, method, properties, body):
     result = process_message(msg, repo)
     send_result_message(result)
     ch.basic_ack(delivery_tag=method.delivery_tag)
+
 
 def start_worker():
     params = pika.ConnectionParameters(RABBIT_HOST, RABBIT_PORT)
@@ -39,6 +43,7 @@ def start_worker():
     channel.basic_consume(queue=QUEUE_IN, on_message_callback=on_message)
     print(f"[main] Waiting for messages in {QUEUE_IN}")
     channel.start_consuming()
+
 
 if __name__ == "__main__":
     start_worker()

@@ -18,4 +18,3 @@ services:
       - rabbitmq
     volumes:
       - ./data:/app/data
-

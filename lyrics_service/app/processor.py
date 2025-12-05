@@ -5,6 +5,7 @@ from app.repo_csv import CsvLyricsRepository
 from app.lyrics_api import fetch_lyrics_from_api
 from app.text_compressor import extract_keywords
 
+
 def process_message(msg: IncomingMessage, repo: CsvLyricsRepository) -> OutgoingMessage:
     results: list[SongText] = []
 
@@ -18,16 +19,13 @@ def process_message(msg: IncomingMessage, repo: CsvLyricsRepository) -> Outgoing
 
         keywords = extract_keywords(lyrics)
 
-        results.append({
-            "artist": artist,
-            "track": track,
-            "lyrics": lyrics,
-            "keywords": keywords
-        })
+        results.append(
+            {"artist": artist, "track": track, "lyrics": lyrics, "keywords": keywords}
+        )
 
     return {
         "id": msg["id"],
         "user_id": msg["user_id"],
         "query": msg["query"],
-        "songs_texts": results
+        "songs_texts": results,
     }

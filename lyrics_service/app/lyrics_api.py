@@ -2,7 +2,10 @@ import os
 import lyricsgenius
 
 GENIUS_TOKEN = os.getenv("GENIUS_API_TOKEN")
-genius = lyricsgenius.Genius(GENIUS_TOKEN, skip_non_songs=True, excluded_terms=["(Remix)", "(Live)"])
+genius = lyricsgenius.Genius(
+    GENIUS_TOKEN, skip_non_songs=True, excluded_terms=["(Remix)", "(Live)"]
+)
+
 
 def fetch_lyrics_from_api(artist: str, track: str) -> str:
     try:

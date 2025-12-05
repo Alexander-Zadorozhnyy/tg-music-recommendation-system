@@ -11,13 +11,13 @@ QUEUE_IN = "fetch_lyrics"
 message = {
     "id": "req1",
     "user_id": "user42",
-    "song_credits": [
-        {"artist": "radiohead", "track": "vegetable"}
-    ],
-    "query": "что-то грустное"
+    "song_credits": [{"artist": "radiohead", "track": "vegetable"}],
+    "query": "что-то грустное",
 }
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_HOST, RABBIT_PORT))
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(RABBIT_HOST, RABBIT_PORT)
+)
 channel = connection.channel()
 channel.queue_declare(queue=QUEUE_IN, durable=True)
 channel.basic_publish(exchange="", routing_key=QUEUE_IN, body=json.dumps(message))
