@@ -8,6 +8,7 @@ from bot.utils.utils import (
     smart_parse_tracks_input,
 )
 import bot.keyboards as kb
+from service.llm_connect import LLMService
 from models.response import Response
 from models.request import Request
 from models.user import User
@@ -15,7 +16,6 @@ from sqlmodel import select
 from database.database import AsyncSessionLocal
 import logging
 import json
-from service.llm_connect import LLMService
 
 
 recommendation_router = Router()
@@ -88,34 +88,50 @@ async def free_form_recommendation(message: Message, state: FSMContext):
 @recommendation_router.message(RecommendationStates.waiting_tracks_input)
 async def process_tracks_input(message: Message, state: FSMContext):
     user_input = message.text.strip()
-    tracks = await smart_parse_tracks_input(user_input)
+    raw_tracks = await smart_parse_tracks_input(user_input)
 
-    if not tracks:
-        await message.answer("❌ Не удалось распознать треки...", parse_mode="HTML")
+    if not raw_tracks:
+        await message.answer("❌ Не удалось распознать формат треков.")
         return
-    if len(tracks) > 10:
-        await message.answer("❌ Слишком много треков. Максимум 10.")
+
+    if len(raw_tracks) > 10:
+        await message.answer("❌ Максимум 10 треков.")
         return
 
     try:
-        processing_msg = await message.answer("🔍 Ищу похожие треки...")
+        processing_msg = await message.answer("🧹 Исправляю опечатки...")
 
-        # Заглушка рекомендаций
-        similar_tracks = [
-            ["Post Malone", "Rockstar", 30],
-            ["Eminem", "Rap God", 35],
-        ]
-        response_text = get_response_based_on_similar_tracks(tracks, similar_tracks)
+        normalized = await LLMService.normalize_tracks(raw_tracks)
+
+        if not normalized.tracks:
+            await message.answer(
+                "⚠️ Не удалось распознать ни один трек. Проверьте формат:\n"
+                "<code>Исполнитель - Название</code>",
+                parse_mode="HTML",
+            )
+            return
+
+        diff = len(raw_tracks) - len(normalized.tracks)
+        if diff > 0:
+            await message.answer(
+                f"ℹ️ Исправлено {len(normalized.tracks)} треков. "
+                f"{diff} пропущено из-за неясности."
+            )
+
+        # Показываем исправленные треки
+        response_lines = ["✅ Исправленные треки:"]
+        for i, track in enumerate(normalized.tracks, 1):
+            response_lines.append(f"{i}. {track.artist} - {track.song}")
+        response_lines.append("\n⏳ Скоро появятся рекомендации!")
+        response_text = "\n".join(response_lines)
 
         # 💾 Сохраняем в БД
         async with AsyncSessionLocal() as session:
-            # Получаем пользователя
             result = await session.exec(
                 select(User).where(User.telegram_id == str(message.from_user.id))
             )
             user = result.first()
             if not user:
-                # Создаём, если вдруг нет (хотя /start должен был создать)
                 user = User(
                     telegram_id=str(message.from_user.id),
                     username=message.from_user.username,
@@ -126,17 +142,16 @@ async def process_tracks_input(message: Message, state: FSMContext):
                 await session.commit()
                 await session.refresh(user)
 
-            # Сохраняем запрос
             request = Request(
                 user_id=user.id,
-                song_credits=json.dumps(tracks, ensure_ascii=False),
+                song_credits=json.dumps(
+                    [t.dict() for t in normalized.tracks], ensure_ascii=False
+                ),
                 query="Подбор похожих треков",
             )
             session.add(request)
             await session.commit()
-            await session.refresh(request)
 
-            # Сохраняем ответ
             response = Response(
                 user_id=user.id,
                 request_id=request.id,
@@ -148,22 +163,20 @@ async def process_tracks_input(message: Message, state: FSMContext):
         await message.answer(response_text)
 
     except Exception as e:
-        logging.error(f"❌ Ошибка в process_tracks_input: {e}")
-        await message.answer("❌ Произошла ошибка при поиске. Попробуйте позже.")
+        logging.error(f"Ошибка при нормализации: {e}", exc_info=True)
+        await message.answer("❌ Не удалось обработать треки.")
     finally:
         await state.clear()
         try:
             await processing_msg.delete()
-        except Exception as e:
-            logging.error(f"Ошибка: {e}")
-            await message.answer("❌ Не удалось обработать запрос.")
+        except Exception:
+            pass
 
 
 @recommendation_router.message(RecommendationStates.waiting_free_form)
 async def process_free_form_request(message: Message, state: FSMContext):
     user_request = message.text.strip()
 
-    # Проверяем релевантность через LLM
     try:
         is_relevant = await LLMService.is_relevant(user_request)
         if not is_relevant:

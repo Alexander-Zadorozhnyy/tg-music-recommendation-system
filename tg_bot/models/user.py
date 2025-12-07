@@ -1,9 +1,5 @@
-from __future__ import annotations
-
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
-from .request import Request
-from .response import Response
+from sqlmodel import SQLModel, Field
+from typing import Optional
 
 
 class User(SQLModel, table=True):
@@ -14,6 +10,3 @@ class User(SQLModel, table=True):
     username: Optional[str] = Field(default=None, max_length=100)
     first_name: Optional[str] = Field(default=None, max_length=100)
     last_name: Optional[str] = Field(default=None, max_length=100)
-
-    requests: List[Request] = Relationship(back_populates="user")
-    responses: List[Response] = Relationship(back_populates="user")

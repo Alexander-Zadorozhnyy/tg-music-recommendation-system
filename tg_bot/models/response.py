@@ -1,10 +1,6 @@
-from __future__ import annotations
-
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from sqlalchemy import Column, Text
 from datetime import datetime
-from .user import User
-from .request import Request
 
 
 class Response(SQLModel, table=True):
@@ -15,6 +11,3 @@ class Response(SQLModel, table=True):
     request_id: int = Field(foreign_key="requests.id")
     response_text: str = Field(sa_column=Column(Text))
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    user: User = Relationship(back_populates="responses")
-    request: Request = Relationship(back_populates="responses")

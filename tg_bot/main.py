@@ -1,8 +1,6 @@
 import asyncio
 import logging
-from models.user import User
-from models.response import Response
-from models.request import Request
+from models import User, Request, Response
 from bot.create_bot import dp, stop_bot, start_bot, bot
 from bot.handlers import recommendation_router, user_router
 from database.database import init_db
