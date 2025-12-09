@@ -1,5 +1,5 @@
 pandas
-pika
+aio_pika
 python-dotenv
 requests
 beautifulsoup4

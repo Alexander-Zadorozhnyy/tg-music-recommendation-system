@@ -1,12 +1,9 @@
-import json
+import asyncio
 import logging
-import pika
 import os
 from dotenv import load_dotenv
 
-from app.repo_csv import CsvLyricsRepository
-from app.processor import process_message
-from app.rabbit_producer import send_result_message
+from app.processor import RequestProcessor
 
 load_dotenv()
 
@@ -27,29 +24,22 @@ CSV_PATH = getenv_any("CSV_PATH", default="/data/songs.csv")
 RABBIT_HOST = getenv_any("RABBIT_HOST", "RABBITMQ_HOST", default="rabbitmq")
 RABBIT_PORT = int(getenv_any("RABBIT_PORT", "RABBITMQ_PORT", default="5672"))
 QUEUE_IN = getenv_any("QUEUE_IN", default="fetch_lyrics")
-
-repo = CsvLyricsRepository(CSV_PATH)
-
-
-def on_message(ch, method, properties, body):
-    print("[main] Received message")
-    msg = json.loads(body)
-    result = process_message(msg, repo)
-    logging.info(f"{result=}")
-    send_result_message(result)
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+QUEUE_OUT = getenv_any("QUEUE_OUT", default="lyrics_responses")
 
 
-def start_worker():
-    params = pika.ConnectionParameters(RABBIT_HOST, RABBIT_PORT)
-    connection = pika.BlockingConnection(params)
-    channel = connection.channel()
-    channel.queue_declare(queue=QUEUE_IN, durable=True)
-    channel.basic_qos(prefetch_count=1)
-    channel.basic_consume(queue=QUEUE_IN, on_message_callback=on_message)
-    print(f"[main] Waiting for messages in {QUEUE_IN}")
-    channel.start_consuming()
+async def start_worker():
+    try:
+        processor = RequestProcessor(
+            RABBIT_HOST, RABBIT_PORT, QUEUE_IN, QUEUE_OUT, CSV_PATH
+        )
+        processor.start()
+
+        while True:
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        logging.info("Stop lyrics processing")
+        processor.stop()
 
 
 if __name__ == "__main__":
-    start_worker()
+    asyncio.run(start_worker())

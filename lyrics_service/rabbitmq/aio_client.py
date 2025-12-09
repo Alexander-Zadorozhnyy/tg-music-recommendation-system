@@ -177,9 +177,7 @@ if __name__ == "__main__":
             await message.ack()
 
         # Start consuming in background
-        asyncio.create_task(
-            rabbitmq_client.consume_messages("requests", sample_callback)
-        )
+        asyncio.create_task(rabbitmq_client.consume_messages("lyrics", sample_callback))
 
         # Publish a test message
         for _ in range(5):
