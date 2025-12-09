@@ -65,6 +65,12 @@ File structure as in tg_bot/.env.example
 ```env
 BOT_TOKEN = your_telegram_bot_token
 ADMIN_ID = tg_admin_id
+MISTRAL_API_KEY = your_mistral_api_key
+DB_HOST = your_host
+DB_USER = your_user
+DB_PASS = your_pass
+DB_NAME = your_name
+DB_PORT = 5432
 ```
 
 ### 4. Launching the Telegram Bot application

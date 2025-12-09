@@ -1,40 +1,54 @@
-version: "3"
-
 services:
   postgres:
     image: postgres:15
     container_name: postgres
     environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq_tg_bot
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Web UI
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
+
   tg_bot:
+    container_name: tg_bot
     build:
       context: ./tg_bot
-      dockerfile: ./Dockerfile
-    environment:
-      - PG_USER=postgres
-      - PG_PASSWORD=postgres
-      - PG_HOST=postgres
-      - PG_PORT=5432
-      - PG_DEFAULT_DATABASE=postgres
-      - PG_DATABASE=music
-    restart: always
+    env_file:
+      - ./tg_bot/.env
+    restart: on-failure
     stdin_open: true # -i
     tty: true # -t
     depends_on:
       postgres:
         condition: service_healthy # Wait for postgres to be healthy
+
+  lyrics-service:
+    build: ./lyrics_service
+    container_name: lyrics_service
+    env_file:
+      - ./lyrics_service/.env
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./lyrics_service/data:/app/data
 
 volumes:
   postgres_data:
