@@ -5,3 +5,5 @@ requests
 beautifulsoup4
 keybert
 lyricsgenius
+pydantic-settings
+pydentic

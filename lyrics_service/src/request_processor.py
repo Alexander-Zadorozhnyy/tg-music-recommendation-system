@@ -2,12 +2,12 @@ import asyncio
 import json
 import logging
 
+import lyricsgenius
 import aio_pika
 
-from app.models import IncomingMessage, OutgoingMessage, SongText
-from app.repo_csv import CsvLyricsRepository
-from app.lyrics_api import fetch_lyrics_from_api
-from app.text_compressor import extract_keywords
+from src.models import IncomingMessage, OutgoingMessage, SongText
+from src.repo_csv import CsvLyricsRepository
+from src.text_compressor import extract_keywords
 
 from rabbitmq.aio_client import RobustRabbitMQClient
 
@@ -18,13 +18,18 @@ logging.basicConfig(
 
 
 class RequestProcessor:
-    def __init__(self, host, port, requests_queue, destination_queue, csv_path):
+    def __init__(
+        self, host, port, requests_queue, destination_queue, csv_path, genius_token
+    ):
         self.rabbitmq_client = RobustRabbitMQClient(host, port)
 
         self.requests_queue = requests_queue
         self.destination_queue = destination_queue
 
         self.repo = CsvLyricsRepository(csv_path)
+        self.genius = lyricsgenius.Genius(
+            genius_token, skip_non_songs=True, excluded_terms=["(Remix)", "(Live)"]
+        )
         self._process_task = None
 
     def start(self):
@@ -85,7 +90,7 @@ class RequestProcessor:
 
             lyrics = self.repo.find_lyrics(artist, song)
             if not lyrics:
-                lyrics = fetch_lyrics_from_api(artist, song)
+                lyrics = self.fetch_lyrics_from_api(artist, song)
 
             keywords = extract_keywords(lyrics)
 
@@ -99,6 +104,17 @@ class RequestProcessor:
             "query": msg["query"],
             "songs_texts": results,
         }
+
+    def fetch_lyrics_from_api(
+        self, artist: str, song: str
+    ) -> str:  # TODO: can be rewritten by agenius for async
+        try:
+            song = self.genius.search_song(song, artist)
+            if song and song.lyrics:
+                return song.lyrics
+            return f"Lyrics not found for {artist} - {song}"
+        except Exception as e:
+            return f"[Error fetching lyrics]: {str(e)}"
 
     async def forward_to_destination(self, data: OutgoingMessage) -> bool:
         """
