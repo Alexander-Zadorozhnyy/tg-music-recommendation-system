@@ -4,6 +4,4 @@ python-dotenv
 requests
 beautifulsoup4
 keybert
-sentence-transformers
-torch
 lyricsgenius

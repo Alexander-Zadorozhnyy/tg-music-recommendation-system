@@ -11,16 +11,16 @@ def process_message(msg: IncomingMessage, repo: CsvLyricsRepository) -> Outgoing
 
     for credit in msg["song_credits"]:
         artist = credit["artist"]
-        track = credit["track"]
+        song = credit["song"]
 
-        lyrics = repo.find_lyrics(artist, track)
+        lyrics = repo.find_lyrics(artist, song)
         if not lyrics:
-            lyrics = fetch_lyrics_from_api(artist, track)
+            lyrics = fetch_lyrics_from_api(artist, song)
 
         keywords = extract_keywords(lyrics)
 
         results.append(
-            {"artist": artist, "track": track, "lyrics": lyrics, "keywords": keywords}
+            {"artist": artist, "song": song, "lyrics": lyrics, "keywords": keywords}
         )
 
     return {

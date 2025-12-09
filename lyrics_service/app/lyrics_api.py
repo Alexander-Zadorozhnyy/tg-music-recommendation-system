@@ -7,11 +7,11 @@ genius = lyricsgenius.Genius(
 )
 
 
-def fetch_lyrics_from_api(artist: str, track: str) -> str:
+def fetch_lyrics_from_api(artist: str, song: str) -> str:
     try:
-        song = genius.search_song(track, artist)
+        song = genius.search_song(song, artist)
         if song and song.lyrics:
             return song.lyrics
-        return f"Lyrics not found for {artist} - {track}"
+        return f"Lyrics not found for {artist} - {song}"
     except Exception as e:
         return f"[Error fetching lyrics]: {str(e)}"

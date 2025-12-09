@@ -1,4 +1,5 @@
 import json
+import logging
 import pika
 import os
 from dotenv import load_dotenv
@@ -8,6 +9,10 @@ from app.processor import process_message
 from app.rabbit_producer import send_result_message
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def getenv_any(*names, default=None):
@@ -30,6 +35,7 @@ def on_message(ch, method, properties, body):
     print("[main] Received message")
     msg = json.loads(body)
     result = process_message(msg, repo)
+    logging.info(f"{result=}")
     send_result_message(result)
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
