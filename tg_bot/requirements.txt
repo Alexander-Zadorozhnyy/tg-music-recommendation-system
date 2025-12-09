@@ -1,7 +1,9 @@
 python-dotenv
 aiogram
-pydentic
-sqlalchemy
+pydantic==2.8.2
 pydantic-settings
-asyncpg
 pre-commit
+mistralai
+sqlmodel < 0.0.15
+sqlalchemy>=2.0.25
+asyncpg>=0.27.0
