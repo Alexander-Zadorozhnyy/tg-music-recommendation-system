@@ -23,3 +23,12 @@ async def recommendation_methods():
         ],
         resize_keyboard=True,
     )
+
+
+async def back_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Назад ◀️")],
+        ],
+        resize_keyboard=True,
+    )
