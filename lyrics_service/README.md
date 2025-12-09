@@ -75,8 +75,8 @@ lyrics_service/
   "id": "req1",
   "user_id": "user42",
   "song_credits": [
-    {"artist": "Radiohead", "track": "Creep"},
-    {"artist": "Adele", "track": "Hello"}
+    {"artist": "Radiohead", "song": "Creep"},
+    {"artist": "Adele", "song": "Hello"}
   ],
   "query": "что-то грустное"
 }
@@ -91,7 +91,7 @@ lyrics_service/
   "songs_texts": [
     {
       "artist": "Radiohead",
-      "track": "Creep",
+      "song": "Creep",
       "lyrics": "...",
       "keywords": ["sadness", "alone", ...]
     },

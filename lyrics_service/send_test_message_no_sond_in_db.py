@@ -10,7 +10,7 @@ QUEUE_IN = "fetch_lyrics"
 message = {
     "id": "req_no_csv",
     "user_id": "user99",
-    "song_credits": [{"artist": "adele", "track": "hello"}],  # заведомо отсутствует
+    "song_credits": [{"artist": "adele", "song": "hello"}],  # заведомо отсутствует
     "query": "что-то красивое",
 }
 

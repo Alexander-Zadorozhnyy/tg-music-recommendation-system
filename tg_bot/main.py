@@ -1,8 +1,10 @@
 import asyncio
 import logging
-from models import User, Request, Response
+
 from bot.create_bot import dp, stop_bot, start_bot, bot
 from bot.handlers import recommendation_router, user_router
+
+from rabbitmq.aio_client import rabbitmq_client
 from database.database import init_db
 
 logging.basicConfig(
@@ -14,6 +16,10 @@ async def main():
     try:
         logging.info("Initializing database...")
         await init_db(drop_all=False)
+
+        logging.info("Connecting to RabbitMQ...")
+        # Initialize RabbitMQ connection
+        await rabbitmq_client.connect()
 
         logging.info("Starting bot setup...")
         dp.include_router(user_router)

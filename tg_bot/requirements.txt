@@ -7,3 +7,4 @@ mistralai
 sqlmodel < 0.0.15
 sqlalchemy>=2.0.25
 asyncpg>=0.27.0
+aio_pika

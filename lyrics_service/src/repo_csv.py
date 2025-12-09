@@ -15,11 +15,11 @@ class CsvLyricsRepository:
                 self.df[col] = ""
         self.df.fillna("", inplace=True)
 
-    def find_lyrics(self, artist: str, track: str) -> Optional[str]:
-        if not artist or not track or self.df.empty:
+    def find_lyrics(self, artist: str, song: str) -> Optional[str]:
+        if not artist or not song or self.df.empty:
             return None
         m = (self.df["artist_name"].str.lower() == artist.lower()) & (
-            self.df["track_name"].str.lower() == track.lower()
+            self.df["track_name"].str.lower() == song.lower()
         )
         res = self.df[m]
         if res.empty:

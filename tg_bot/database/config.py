@@ -4,7 +4,6 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-
     BOT_TOKEN: Optional[str] = None
     ADMIN_ID: int
 
@@ -13,6 +12,11 @@ class Settings(BaseSettings):
     DB_USER: Optional[str] = None
     DB_PASS: Optional[str] = None
     DB_NAME: Optional[str] = None
+
+    RABBIT_HOST: str = "rabbitmq"
+    RABBIT_PORT: int = 5672
+    RABBIT_USER: Optional[str] = None
+    RABBIT_PASS: Optional[str] = None
 
     MISTRAL_API_KEY: Optional[str] = None
 
@@ -27,6 +31,10 @@ class Settings(BaseSettings):
     def validate(self) -> None:
         if not all([self.DB_HOST, self.DB_NAME, self.DB_PASS, self.DB_USER]):
             raise ValueError("Missing required database configuration")
+        if not all(
+            [self.RABBIT_HOST, self.RABBIT_PORT, self.RABBIT_USER, self.RABBIT_PASS]
+        ):
+            raise ValueError("Missing required rabbitmq configuration")
         if not self.MISTRAL_API_KEY:
             raise ValueError("MISTRAL_API_KEY is required")
         if not self.BOT_TOKEN:
