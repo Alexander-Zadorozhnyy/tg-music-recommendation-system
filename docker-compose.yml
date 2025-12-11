@@ -39,6 +39,11 @@ services:
       - bootstrap.memory_lock=true # Disable JVM heap memory swapping
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and later
+      - DISABLE_SECURITY_PLUGIN=true
+      # Disable SSL
+      - plugins.security.ssl.http.enabled=false
+      # Disable demo configuration
+      - DISABLE_INSTALL_DEMO_CONFIG=true
     ulimits:
       memlock:
         soft: -1 # Set memlock to unlimited (no soft or hard limit)
@@ -51,6 +56,13 @@ services:
     ports:
       - 9200:9200 # REST API
       - 9600:9600 # Performance Analyzer
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://opensearch-node:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
   tg_bot:
     container_name: tg_bot
     build:
@@ -63,6 +75,21 @@ services:
     depends_on:
       postgres:
         condition: service_healthy # Wait for postgres to be healthy
+
+  opensearch_service:
+    container_name: opensearch_service
+    build:
+      context: ./opensearch_service
+    env_file:
+      - ./opensearch_service/.env
+    restart: on-failure
+    stdin_open: true # -i
+    tty: true # -t
+    ports:
+      - 8009:8009
+    depends_on:
+      opensearch-node:
+        condition: service_healthy
 
   lyrics-service:
     build: ./lyrics_service
