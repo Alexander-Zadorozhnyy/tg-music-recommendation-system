@@ -6,6 +6,7 @@ from bot.handlers import recommendation_router, user_router
 
 from rabbitmq.aio_client import rabbitmq_client
 from database.database import init_db
+from rabbitmq.answer_sender import MessageSender
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -22,6 +23,10 @@ async def main():
         await rabbitmq_client.connect()
 
         logging.info("Starting bot setup...")
+
+        sender = MessageSender(bot, rabbitmq_client, "response")
+        sender.start()
+
         dp.include_router(user_router)
         dp.include_router(recommendation_router)
         await start_bot()
