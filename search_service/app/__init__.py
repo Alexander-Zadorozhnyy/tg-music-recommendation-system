@@ -1,0 +1,2 @@
+"""Music Search API application."""
+
