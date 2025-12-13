@@ -26,6 +26,48 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  opensearch-node:
+    # This is also the hostname of the container within the Docker network (i.e. https://opensearch-node1/)
+    image: opensearchproject/opensearch:latest # Specifying the latest available image - modify if you want a specific version
+    container_name: opensearch-node
+    environment:
+      - cluster.name=opensearch-cluster # Name the cluster
+      - node.name=opensearch-node # Name the node that will run in this container
+      - discovery.seed_hosts=opensearch-node # Nodes to look for when discovering the cluster
+      - cluster.initial_cluster_manager_nodes=opensearch-node # Nodes eligible to serve as cluster manager
+      - bootstrap.memory_lock=true # Disable JVM heap memory swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and later
+      - DISABLE_SECURITY_PLUGIN=true
+      # Disable SSL
+      - plugins.security.ssl.http.enabled=false
+      # Disable demo configuration
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+    ulimits:
+      memlock:
+        soft: -1 # Set memlock to unlimited (no soft or hard limit)
+        hard: -1
+      nofile:
+        soft: 65536 # Maximum number of open files for the opensearch user - set to at least 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data # Creates volume called opensearch-data1 and mounts it to the container
+    ports:
+      - 9200:9200 # REST API
+      - 9600:9600 # Performance Analyzer
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
 
   tg_bot:
     container_name: tg_bot
@@ -38,17 +80,66 @@ services:
     tty: true # -t
     depends_on:
       postgres:
-        condition: service_healthy # Wait for postgres to be healthy
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
-  lyrics-service:
+  create_index:
+    container_name: create_index
+    build:
+      context: ./search_service
+      dockerfile: InitDockerfile
+    env_file:
+      - ./search_service/.env
+    stdin_open: true # -i
+    tty: true # -t
+    depends_on:
+      opensearch-node:
+        condition: service_healthy
+
+  opensearch_service:
+    container_name: opensearch_service
+    build:
+      context: ./search_service
+    env_file:
+      - ./search_service/.env
+    restart: on-failure
+    stdin_open: true # -i
+    tty: true # -t
+    ports:
+      - 8009:8009
+    depends_on:
+      create_index:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      opensearch-node:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8009/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  lyrics_service:
     build: ./lyrics_service
     container_name: lyrics_service
     env_file:
       - ./lyrics_service/.env
     depends_on:
-      - rabbitmq
-    volumes:
-      - ./lyrics_service/data:/app/data
+      rabbitmq:
+        condition: service_healthy
+
+  recommendation_service:
+    build: ./recommendation_service
+    container_name: recommendation_service
+    env_file:
+      - ./recommendation_service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  opensearch-data:

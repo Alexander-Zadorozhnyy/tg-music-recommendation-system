@@ -114,14 +114,14 @@ async def process_tracks_input(message: Message, state: FSMContext):
     try:
         processing_msg = await message.answer("🧹 Исправляю опечатки...")
 
-        # normalized = await LLMService.normalize_tracks(raw_tracks)
-        normalized = TrackList(
-            tracks=[
-                TrackItem(artist="Arctic Monkeys", song="Do I Wanna Know?"),
-                TrackItem(artist="Lana Del Rey", song="Summertime Sadness"),
-                TrackItem(artist="Mgmt", song="Little Dark Age"),
-            ]
-        )
+        normalized = await LLMService.normalize_tracks(raw_tracks)
+        # normalized = TrackList(
+        #     tracks=[
+        #         TrackItem(artist="Arctic Monkeys", song="Do I Wanna Know?"),
+        #         TrackItem(artist="Lana Del Rey", song="Summertime Sadness"),
+        #         TrackItem(artist="Mgmt", song="Little Dark Age"),
+        #     ]
+        # )
         logging.info(f"{normalized=}")
         if not normalized.tracks:
             await state.set_state(RecommendationStates.waiting_tracks_input)
