@@ -98,13 +98,15 @@ class LyricsProcessor:
                 post_response.raise_for_status()
                 parsed_response = post_response.json()
                 print(f"{parsed_response=}")
-                response = "Based on your track list we suggest you:\n" + "\n".join(
-                    list(
-                        map(
-                            self.process_single_response_track,
-                            parsed_response["results"],
-                        )
+                response = (
+                    "🎶 На основе вашего запроса подобрали следующие композиции:\n\n```md\n"
+                    + "\n".join(
+                        [
+                            self.process_single_response_track(i, x)
+                            for i, x in enumerate(parsed_response["results"])
+                        ]
                     )
+                    + "```"
                 )
 
         except Exception as e:
@@ -121,8 +123,8 @@ class LyricsProcessor:
     def process_single_track(self, text: SongText):
         return f"{text['artist']}:{text['song']} - {', '.join(text['keywords'])}"
 
-    def process_single_response_track(self, response_track: ResponseTrack):
-        return f"{response_track['artist_name']} - {response_track['track_name']} ({response_track['release_date']}). Score: {response_track['score']}"
+    def process_single_response_track(self, num: int, response_track: ResponseTrack):
+        return f"📀 {num}) {response_track['artist_name']} - {response_track['track_name']} ({response_track['release_date']}). Score: {response_track['score']}"
 
     async def forward_to_destination(self, data: OutgoingMessage) -> bool:
         """

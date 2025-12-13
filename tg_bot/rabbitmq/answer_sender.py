@@ -47,7 +47,7 @@ class MessageSender:
             # logging.info(f"Processing message: {data=}")
 
             await self.bot.send_message(
-                chat_id=767149056, text=data["response"]
+                chat_id=767149056, text=data["response"], parse_mode="MarkdownV2"
             )  # TODO: get real id from db
 
             if True:
