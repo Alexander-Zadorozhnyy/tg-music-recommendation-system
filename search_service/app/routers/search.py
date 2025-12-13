@@ -13,7 +13,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 async def search(request: SearchRequest) -> SearchResponse:
     """
     Выполняет поиск по музыкальному индексу.
-    
+
     Поддерживает:
     - Текстовый поиск по артистам, названиям треков и текстам песен
     - Фильтрацию по жанру, теме, году выпуска и другим параметрам
@@ -54,7 +54,7 @@ async def search_get(
         if year_to:
             release_date_filter["lte"] = year_to
         filters["release_date"] = release_date_filter
-    
+
     try:
         return search_service.search(
             query=q,
@@ -65,7 +65,9 @@ async def search_get(
         raise HTTPException(status_code=500, detail=f"Ошибка поиска: {str(e)}")
 
 
-@router.get("/track/{track_id}", response_model=TrackResult, summary="Получить трек по ID")
+@router.get(
+    "/track/{track_id}", response_model=TrackResult, summary="Получить трек по ID"
+)
 async def get_track(track_id: str) -> TrackResult:
     """
     Получает информацию о треке по его ID.
@@ -74,4 +76,3 @@ async def get_track(track_id: str) -> TrackResult:
     if not track:
         raise HTTPException(status_code=404, detail=f"Трек с ID {track_id} не найден")
     return track
-

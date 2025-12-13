@@ -14,13 +14,12 @@ async def health_check() -> HealthResponse:
     """
     index_exists = opensearch_service.index_exists()
     document_count = opensearch_service.get_document_count() if index_exists else None
-    
+
     status = "healthy" if index_exists else "unhealthy"
-    
+
     return HealthResponse(
         status=status,
         index_name=settings.INDEX_NAME,
         index_exists=index_exists,
         document_count=document_count,
     )
-

@@ -535,10 +535,10 @@ music_rag/
 async def new_endpoint(param: str):
     """
     Описание endpoint.
-    
+
     Args:
         param: Параметр запроса
-        
+
     Returns:
         Результат
     """

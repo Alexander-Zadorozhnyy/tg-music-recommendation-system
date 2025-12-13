@@ -6,11 +6,11 @@ from app.models.schemas import TrackResult, SearchResponse
 
 class SearchService:
     """Сервис для поиска."""
-    
+
     def __init__(self):
         """Инициализация сервиса."""
         self.opensearch = opensearch_service
-    
+
     def search(
         self,
         query: str,
@@ -20,13 +20,13 @@ class SearchService:
     ) -> SearchResponse:
         """
         Выполняет поиск по музыкальному индексу.
-        
+
         Args:
             query: Поисковый запрос
             size: Количество результатов
             search_fields: Поля для поиска
             filters: Фильтры для запроса
-            
+
         Returns:
             Результаты поиска
         """
@@ -36,11 +36,11 @@ class SearchService:
             search_fields=search_fields,
             filters=filters,
         )
-        
+
         total = response["hits"]["total"]["value"]
         took = response.get("took")
         hits = response["hits"]["hits"]
-        
+
         results = []
         for hit in hits:
             source = hit["_source"]
@@ -61,28 +61,28 @@ class SearchService:
                 loudness=source.get("loudness"),
             )
             results.append(result)
-        
+
         return SearchResponse(
             total=total,
             results=results,
             query=query,
             took=took,
         )
-    
+
     def get_track(self, track_id: str) -> Optional[TrackResult]:
         """
         Получает трек по ID.
-        
+
         Args:
             track_id: ID трека
-            
+
         Returns:
             Информация о треке или None
         """
         source = self.opensearch.get_track_by_id(track_id)
         if not source:
             return None
-        
+
         return TrackResult(
             track_id=source.get("track_id", track_id),
             artist_name=source.get("artist_name", ""),
@@ -102,4 +102,3 @@ class SearchService:
 
 
 search_service = SearchService()
-

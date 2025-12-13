@@ -5,7 +5,7 @@ from typing import Optional
 
 class Settings:
     """Настройки приложения."""
-    
+
     OPENSEARCH_URL: str = os.getenv("OPENSEARCH_URL", "https://localhost:9200")
     OPENSEARCH_USER: str = os.getenv("OPENSEARCH_USER", "")
     OPENSEARCH_PASSWORD: str = os.getenv("OPENSEARCH_PASSWORD", "")
@@ -20,20 +20,28 @@ class Settings:
     APP_NAME: str = "Music Search API"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
-    
+
     def validate(self) -> None:
         """Проверяет, что все обязательные настройки заполнены."""
         errors = []
-        
+
         if not self.OPENSEARCH_USER:
-            errors.append("OPENSEARCH_USER не установлен. Установите через переменную окружения или .env файл")
+            errors.append(
+                "OPENSEARCH_USER не установлен. Установите через переменную окружения или .env файл"
+            )
         if not self.OPENSEARCH_PASSWORD:
-            errors.append("OPENSEARCH_PASSWORD не установлен. Установите через переменную окружения или .env файл")
+            errors.append(
+                "OPENSEARCH_PASSWORD не установлен. Установите через переменную окружения или .env файл"
+            )
         if not self.YANDEX_API_KEY:
-            errors.append("YANDEX_API_KEY не установлен. Установите через переменную окружения или .env файл")
+            errors.append(
+                "YANDEX_API_KEY не установлен. Установите через переменную окружения или .env файл"
+            )
         if not self.YANDEX_FOLDER_ID:
-            errors.append("YANDEX_FOLDER_ID не установлен. Установите через переменную окружения или .env файл")
-        
+            errors.append(
+                "YANDEX_FOLDER_ID не установлен. Установите через переменную окружения или .env файл"
+            )
+
         if errors:
             error_msg = "\n".join(f"  - {error}" for error in errors)
             raise ValueError(
@@ -44,4 +52,3 @@ class Settings:
 
 
 settings = Settings()
-
