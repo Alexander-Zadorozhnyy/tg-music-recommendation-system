@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     QUEUE_OUT: str = "response"
 
     MISTRAL_API_KEY: Optional[str] = None
-    OPENSEARH_SERVICE_URL: str = "http://localhost:8009"
+    OPENSEARH_SERVICE_URL: str = "http://opensearch_service:8009"
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
