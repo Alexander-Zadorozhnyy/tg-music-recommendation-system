@@ -26,6 +26,12 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
 
   opensearch-node:
     # This is also the hostname of the container within the Docker network (i.e. https://opensearch-node1/)
@@ -57,7 +63,7 @@ services:
       - 9200:9200 # REST API
       - 9600:9600 # Performance Analyzer
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://opensearch-node:9200"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
       interval: 30s
       timeout: 10s
       retries: 10
@@ -74,32 +80,65 @@ services:
     tty: true # -t
     depends_on:
       postgres:
-        condition: service_healthy # Wait for postgres to be healthy
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  create_index:
+    container_name: create_index
+    build:
+      context: ./search_service
+      dockerfile: InitDockerfile
+    env_file:
+      - ./search_service/.env
+    stdin_open: true # -i
+    tty: true # -t
+    depends_on:
+      opensearch-node:
+        condition: service_healthy
 
   opensearch_service:
     container_name: opensearch_service
     build:
-      context: ./opensearch_service
+      context: ./search_service
     env_file:
-      - ./opensearch_service/.env
+      - ./search_service/.env
     restart: on-failure
     stdin_open: true # -i
     tty: true # -t
     ports:
       - 8009:8009
     depends_on:
+      create_index:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
       opensearch-node:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8009/health" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
-  lyrics-service:
+  lyrics_service:
     build: ./lyrics_service
     container_name: lyrics_service
     env_file:
       - ./lyrics_service/.env
     depends_on:
-      - rabbitmq
-    volumes:
-      - ./lyrics_service/data:/app/data
+      rabbitmq:
+        condition: service_healthy
+
+  recommendation_service:
+    build: ./recommendation_service
+    container_name: recommendation_service
+    env_file:
+      - ./recommendation_service/.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres_data:
