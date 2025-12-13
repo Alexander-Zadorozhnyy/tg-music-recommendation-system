@@ -1,6 +1,10 @@
+import logging
+import json
+
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+
 from bot.states.bot_state import RecommendationStates
 from bot.utils.utils import (
     get_response_based_on_free_form_request,
@@ -14,9 +18,9 @@ from models.request import Request
 from models.user import User
 from sqlmodel import select
 from database.database import AsyncSessionLocal
-import logging
-import json
 
+from rabbitmq.aio_client import rabbitmq_client
+from models.track import TrackItem, TrackList
 
 recommendation_router = Router()
 
@@ -27,6 +31,15 @@ async def find_recommendations(message: Message, state: FSMContext):
     await message.answer(
         "🎶 Выберите способ получения рекомендаций:",
         reply_markup=await kb.recommendation_methods(),
+    )
+
+
+@recommendation_router.message(F.text == "Назад ◀️")
+async def back(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        "🎶 Выберите способ получения рекомендаций:",
+        reply_markup=kb.menu,
     )
 
 
@@ -101,13 +114,24 @@ async def process_tracks_input(message: Message, state: FSMContext):
     try:
         processing_msg = await message.answer("🧹 Исправляю опечатки...")
 
-        normalized = await LLMService.normalize_tracks(raw_tracks)
-
+        # normalized = await LLMService.normalize_tracks(raw_tracks)
+        normalized = TrackList(
+            tracks=[
+                TrackItem(artist="Arctic Monkeys", song="Do I Wanna Know?"),
+                TrackItem(artist="Lana Del Rey", song="Summertime Sadness"),
+                TrackItem(artist="Mgmt", song="Little Dark Age"),
+            ]
+        )
+        logging.info(f"{normalized=}")
         if not normalized.tracks:
+            await state.set_state(RecommendationStates.waiting_tracks_input)
+
             await message.answer(
                 "⚠️ Не удалось распознать ни один трек. Проверьте формат:\n"
-                "<code>Исполнитель - Название</code>",
+                "<code>Исполнитель - Название</code>"
+                "Попробуйте еще раз!",
                 parse_mode="HTML",
+                reply_markup=await kb.back_keyboard(),
             )
             return
 
@@ -149,24 +173,34 @@ async def process_tracks_input(message: Message, state: FSMContext):
                 ),
                 query="Подбор похожих треков",
             )
+
             session.add(request)
             await session.commit()
 
-            response = Response(
-                user_id=user.id,
-                request_id=request.id,
-                response_text=response_text,
-            )
-            session.add(response)
-            await session.commit()
+            # response = Response(
+            #     user_id=user.id,
+            #     request_id=request.id,
+            #     response_text=response_text,
+            # )
+            # session.add(response)
+            # await session.commit()
 
+            msg = {
+                "id": request.id,
+                "user_id": user.id,
+                "query": "Подбор похожих треков",
+                "song_credits": [t.dict() for t in normalized.tracks],
+            }
+            await rabbitmq_client.publish_message(
+                "requests", json.dumps(msg, ensure_ascii=False)
+            )
         await message.answer(response_text)
+        await state.clear()
 
     except Exception as e:
         logging.error(f"Ошибка при нормализации: {e}", exc_info=True)
         await message.answer("❌ Не удалось обработать треки.")
     finally:
-        await state.clear()
         try:
             await processing_msg.delete()
         except Exception:
@@ -180,11 +214,12 @@ async def process_free_form_request(message: Message, state: FSMContext):
     try:
         is_relevant = await LLMService.is_relevant(user_request)
         if not is_relevant:
+            await state.set_state(RecommendationStates.waiting_free_form)
             await message.answer(
                 "❌ Этот запрос не связан с музыкой, рекомендациями или исполнителями.\n"
-                "Попробуйте описать, какую музыку вы ищете!"
+                "Попробуйте описать, какую музыку вы ищете!",
+                reply_markup=await kb.back_keyboard(),
             )
-            await state.clear()
             return
     except Exception as e:
         logging.error(f"Ошибка при проверке релевантности: {e}")

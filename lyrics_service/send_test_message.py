@@ -11,7 +11,7 @@ QUEUE_IN = "fetch_lyrics"
 message = {
     "id": "req1",
     "user_id": "user42",
-    "song_credits": [{"artist": "radiohead", "track": "vegetable"}],
+    "song_credits": [{"artist": "radiohead", "song": "vegetable"}],
     "query": "что-то грустное",
 }
 

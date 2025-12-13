@@ -5,7 +5,7 @@ from typing import TypedDict, List
 
 class SongCredit(TypedDict):
     artist: str
-    track: str
+    song: str
 
 
 class IncomingMessage(TypedDict):
@@ -17,7 +17,7 @@ class IncomingMessage(TypedDict):
 
 class SongText(TypedDict):
     artist: str
-    track: str
+    song: str
     lyrics: str
     keywords: List[str]
 
