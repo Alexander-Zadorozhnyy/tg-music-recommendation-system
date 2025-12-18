@@ -1,24 +1,21 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import Optional
 
 
 class Settings(BaseSettings):
-    GENIUS_API_TOKEN: str
+    GENIUS_API_TOKEN: Optional[str] = os.getenv("GENIUS_API_TOKEN", None)
 
-    RABBIT_HOST: str = "rabbitmq"
-    RABBIT_PORT: int = 5672
-    RABBIT_USER: Optional[str] = None
-    RABBIT_PASS: Optional[str] = None
+    RABBIT_HOST: str = os.getenv("RABBIT_HOST", "rabbitmq")
+    RABBIT_PORT: int = int(os.getenv("RABBIT_PORT", 5432))
+    RABBIT_USER: str = os.getenv("RABBIT_USER", "guest")
+    RABBIT_PASS: str = os.getenv("RABBIT_PASS", "guest")
 
-    QUEUE_IN: str = "requests"
-    QUEUE_OUT: str = "lyrics"
+    QUEUE_IN: str = os.getenv("QUEUE_REQUESTS", "requests")
+    QUEUE_OUT: str = os.getenv("QUEUE_LYRICS", "lyrics")
 
     CSV_PATH: str = "./data/songs.csv"
-
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
-    )
 
     def validate(self) -> None:
         if self.GENIUS_API_TOKEN is None:

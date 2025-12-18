@@ -24,7 +24,7 @@ async def main():
 
         logging.info("Starting bot setup...")
 
-        sender = MessageSender(bot, rabbitmq_client, "response")
+        sender = MessageSender(bot, rabbitmq_client)
         sender.start()
 
         dp.include_router(user_router)

@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 from app.models.schemas import HealthResponse
 from app.services.opensearch_service import opensearch_service
-from app.config import settings
+from config import settings
 
 router = APIRouter(prefix="/health", tags=["health"])
 

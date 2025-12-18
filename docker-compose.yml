@@ -2,10 +2,8 @@ services:
   postgres:
     image: postgres:15
     container_name: postgres
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASS}
-      - POSTGRES_DB=${DB_NAME}
+    env_file:
+      - .env
     ports:
       - "5432:5432"
     volumes:
@@ -44,12 +42,14 @@ services:
       - cluster.initial_cluster_manager_nodes=opensearch-node # Nodes eligible to serve as cluster manager
       - bootstrap.memory_lock=true # Disable JVM heap memory swapping
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # Set min and max JVM heap sizes to at least 50% of system RAM
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and later
+      # - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # Sets the demo admin user password when using demo configuration, required for OpenSearch 2.12 and later
       - DISABLE_SECURITY_PLUGIN=true
       # Disable SSL
       - plugins.security.ssl.http.enabled=false
       # Disable demo configuration
       - DISABLE_INSTALL_DEMO_CONFIG=true
+    env_file:
+      .env
     ulimits:
       memlock:
         soft: -1 # Set memlock to unlimited (no soft or hard limit)
@@ -74,7 +74,7 @@ services:
     build:
       context: ./tg_bot
     env_file:
-      - ./tg_bot/.env
+      - .env
     restart: on-failure
     stdin_open: true # -i
     tty: true # -t
@@ -126,7 +126,7 @@ services:
     build: ./lyrics_service
     container_name: lyrics_service
     env_file:
-      - ./lyrics_service/.env
+      - .env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -135,7 +135,7 @@ services:
     build: ./recommendation_service
     container_name: recommendation_service
     env_file:
-      - ./recommendation_service/.env
+      - .env
     depends_on:
       rabbitmq:
         condition: service_healthy
