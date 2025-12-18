@@ -8,14 +8,16 @@ MelodyMate: Music Recommendation System for ITMO LLM Course. MelodyMate is a mus
 
 - Python 3.12+
 - Aiogram (asynchronous framework for the Telegram Bot API)
-- ...
+- Mistral LLM
+- Genius API
+- Opensearh engine
 
 ## Installation and configuration
 
 ### 1. Cloning a repository
 
 ```bash
-git clone <URL репозитория>
+git clone https://github.com/Alexander-Zadorozhnyy/tg-music-recommendation-system.git
 cd tg-music-recommendation-system
 ```
 
@@ -51,32 +53,77 @@ sudo systemctl status docker
 sudo docker run hello-world
 ```
 
-### 3. Setting up Environment Variables
+### 3. Setting up Environment Variables Application .env files
 
-Create a `.env` file in the tg_bot directory of the project and add the following variables:
+#### Main .env
 
-```bash
-cd tg_bot/
-nano .env
+Create a `.env` file with structure similar to [`.env.example`](./env.example) following variables:
+
+```sh
+# TG BOT Credits
+BOT_TOKEN = your_token_here
+ADMIN_ID = admin_tg_id_here
+
+# DB Config
+POSTGRES_HOST = postgres
+POSTGRES_PORT = 5432
+POSTGRES_USER = postgres
+POSTGRES_PASSWORD = postgres
+POSTGRES_DB = music
+
+# Rabbitmq Config
+RABBIT_HOST = rabbitmq
+RABBIT_PORT = 5672
+RABBIT_USER = guest
+RABBIT_PASS = guest
+
+QUEUE_REQUESTS = "requests"
+QUEUE_LYRICS = "lyrics"
+QUEUE_RESPONSE = "response"
+
+# API keys
+MISTRAL_API_KEY = your_token_here
+GENIUS_API_TOKEN = your_token_here
+
+# Opensearch url
+OPENSEARCH_SERVICE_URL = "http://opensearch_service:8009"
 ```
 
-File structure as in tg_bot/.env.example
+#### Opensearch .env config file
 
-```env
-BOT_TOKEN = your_telegram_bot_token
-ADMIN_ID = tg_admin_id
-MISTRAL_API_KEY = your_mistral_api_key
-DB_HOST = your_host
-DB_USER = your_user
-DB_PASS = your_pass
-DB_NAME = your_name
-DB_PORT = 5432
+Create a `.env` file with structure similar to [`.env.example`](./search_service/env.example) following variables:
+
+```sh
+# Required params
+OPENSEARCH_URL=https://your-opensearch-host:9200
+OPENSEARCH_USER=your_opensearch_user
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=your_password_here
+
+# Alternative OpenSearch Configuration (for eval notebook, REQUIRED)
+OPENSEARCH_HOST=your-opensearch-host
+OPENSEARCH_PORT=9200
+
+# OpenSearch Index (optional, has default)
+OPENSEARCH_INDEX=music_ceds_semantic
+
+# Yandex API Configuration
+YANDEX_API_KEY=your_yandex_api_key_here
+YANDEX_FOLDER_ID=your_yandex_folder_id_here
+YANDEX_EMBED_MODEL=text-search-doc
+YANDEX_EMBEDDINGS_URL=https://llm.api.cloud.yandex.net/foundationModels/v1/textEmbedding
+YANDEX_LLM_MODEL=yandexgpt-lite
+YANDEX_COMPLETION_URL=https://llm.api.cloud.yandex.net/foundationModels/v1/completion
+
+# Semantic Chunking Configuration (optional)
+SEMANTIC_SIM_THRESHOLD=0.8
+MAX_SENT_PER_CHUNK=8
+CSV_FILE = "./data/tcc_ceds_music.csv"
 ```
 
 ### 4. Launching the Telegram Bot application
 
 ```bash
-docker.exe compose -f .\docker-compose.yml up
+docker.exe compose up -d
 ```
 
 ## Code Style & Linting (pre-commit)
