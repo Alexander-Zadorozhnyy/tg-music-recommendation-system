@@ -14,7 +14,9 @@ class Settings:
 
     OPENSEARCH_URL: str = os.getenv("OPENSEARCH_URL", "https://localhost:9200")
     OPENSEARCH_USER: str = os.getenv("OPENSEARCH_USER", "")
-    OPENSEARCH_PASSWORD: str = os.getenv("OPENSEARCH_PASSWORD", "")
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD: str = os.getenv(
+        "OPENSEARCH_INITIAL_ADMIN_PASSWORD", ""
+    )
     YANDEX_API_KEY: str = os.getenv("YANDEX_API_KEY", "")
     YANDEX_FOLDER_ID: str = os.getenv("YANDEX_FOLDER_ID", "")
     YANDEX_EMBED_MODEL: str = os.getenv("YANDEX_EMBED_MODEL", "text-search-doc")
@@ -36,9 +38,9 @@ class Settings:
             errors.append(
                 "OPENSEARCH_USER не установлен. Установите через переменную окружения или .env файл"
             )
-        if not self.OPENSEARCH_PASSWORD:
+        if not self.OPENSEARCH_INITIAL_ADMIN_PASSWORD:
             errors.append(
-                "OPENSEARCH_PASSWORD не установлен. Установите через переменную окружения или .env файл"
+                "OPENSEARCH_INITIAL_ADMIN_PASSWORD не установлен. Установите через переменную окружения или .env файл"
             )
         if not self.YANDEX_API_KEY:
             errors.append(

@@ -50,7 +50,9 @@ def create_client(url: str, user: str, password: str) -> OpenSearch:
 
 
 client = create_client(
-    settings.OPENSEARCH_URL, settings.OPENSEARCH_USER, settings.OPENSEARCH_PASSWORD
+    settings.OPENSEARCH_URL,
+    settings.OPENSEARCH_USER,
+    settings.OPENSEARCH_INITIAL_ADMIN_PASSWORD,
 )
 
 MODEL_URI = f"emb://{settings.YANDEX_FOLDER_ID}/{settings.YANDEX_EMBED_MODEL}/latest"

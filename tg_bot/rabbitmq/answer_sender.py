@@ -4,6 +4,10 @@ import logging
 
 import aio_pika
 
+from database.config import get_settings
+
+settings = get_settings()
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -11,16 +15,11 @@ logging.basicConfig(
 
 
 class MessageSender:
-    def __init__(
-        self,
-        bot,
-        rabbitmq_client,
-        response_queue,
-    ):
+    def __init__(self, bot, rabbitmq_client):
         self.bot = bot
         self.rabbitmq_client = rabbitmq_client
 
-        self.response_queue = response_queue
+        self.response_queue = settings.QUEUE_RESPONSE
 
         self._process_task = None
 
