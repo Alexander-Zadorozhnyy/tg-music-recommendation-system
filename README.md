@@ -4,6 +4,26 @@
 
 MelodyMate: Music Recommendation System for ITMO LLM Course. MelodyMate is a music recommendation system developed as a final project for the ITMO Large Language Models course. The project demonstrates the application of modern machine learning techniques and natural language processing to create personalized music recommendations.
 
+## Architecture
+
+<p align="center">
+      <img src="imgs/diagram.png" alt="Domovoj optic camera backend example." width="726">
+</p>
+
+### Description
+
+1. Receiving a request from the user (selecting similar ones, a free-form request for music)
+
+   - Validating and correcting the track list of the user's request via LLM Mistral Structured Output
+
+2. Getting the lyrics of all the songs
+3. OpenSearch search for the most suitable songs (Retrieval)
+4. Reply to the user with the track list and supporting information using LLM (Generation)
+
+   - Bot creates detailed response through LLM with a description of why the songs were chosen and what we liked about the original ones.
+
+5. All interaction is organized through RabbitMQ queues, thereby allowing efficient system scaling.
+
 ## Technology stack
 
 - Python 3.12+
