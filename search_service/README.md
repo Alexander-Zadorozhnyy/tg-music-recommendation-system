@@ -77,7 +77,7 @@ Music Search API предоставляет RESTful интерфейс для п
 class Settings:
     OPENSEARCH_URL: str
     OPENSEARCH_USER: str
-    OPENSEARCH_PASSWORD: str
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD: str
     YANDEX_API_KEY: str
     YANDEX_FOLDER_ID: str
     INDEX_NAME: str
@@ -217,7 +217,7 @@ pip install -r requirements.txt
 # OpenSearch (ОБЯЗАТЕЛЬНО)
 OPENSEARCH_URL=https://localhost:9200
 OPENSEARCH_USER=your_opensearch_user
-OPENSEARCH_PASSWORD=your_opensearch_password
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=your_opensearch_password
 
 # Yandex API (ОБЯЗАТЕЛЬНО)
 YANDEX_API_KEY=your_yandex_api_key
@@ -235,7 +235,7 @@ DEBUG=False
 ```bash
 export OPENSEARCH_URL="https://localhost:9200"
 export OPENSEARCH_USER="your_user"
-export OPENSEARCH_PASSWORD="your_password"
+export OPENSEARCH_INITIAL_ADMIN_PASSWORD="your_password"
 export YANDEX_API_KEY="your_key"
 export YANDEX_FOLDER_ID="your_folder_id"
 ```

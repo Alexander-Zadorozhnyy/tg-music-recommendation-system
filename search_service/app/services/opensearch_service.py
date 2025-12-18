@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests.auth import HTTPBasicAuth
 
-from app.config import settings
+from config import settings
 
 
 class OpenSearchService:
@@ -16,7 +16,9 @@ class OpenSearchService:
 
     def _create_client(self) -> OpenSearch:
         """Создаёт клиент OpenSearch."""
-        auth = HTTPBasicAuth(settings.OPENSEARCH_USER, settings.OPENSEARCH_PASSWORD)
+        auth = HTTPBasicAuth(
+            settings.OPENSEARCH_USER, settings.OPENSEARCH_INITIAL_ADMIN_PASSWORD
+        )
         client = OpenSearch(
             hosts=[settings.OPENSEARCH_URL],
             http_compress=True,
