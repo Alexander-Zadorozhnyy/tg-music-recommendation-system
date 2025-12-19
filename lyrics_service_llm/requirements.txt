@@ -1,0 +1,7 @@
+groq
+pika
+python-dotenv
+pandas
+lyricsgenius
+requests
+
