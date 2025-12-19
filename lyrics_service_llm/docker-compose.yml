@@ -1,0 +1,21 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # Web UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    container_name: lyrics_rabbitmq
+
+  lyrics-service:
+    build: .
+    container_name: lyrics_service
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./data:/app/data
+
