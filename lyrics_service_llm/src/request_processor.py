@@ -1,12 +1,14 @@
 import asyncio
 import json
 import logging
-from typing import Any
 
+import lyricsgenius
 import aio_pika
-import httpx
 
-from src.models import IncomingMessage, OutgoingMessage, ResponseTrack, SongText
+from src.lyrics_api import GiniusInteractor
+from src.llm_groq import GroqAPIInteractor
+from src.models import IncomingMessage, OutgoingMessage, SongText
+from src.repo_csv import CsvLyricsRepository
 
 from rabbitmq.aio_client import RobustRabbitMQClient
 
@@ -16,16 +18,26 @@ logging.basicConfig(
 )
 
 
-class LyricsProcessor:
+class RequestProcessor:
     def __init__(
-        self, host, port, requests_queue, destination_queue, opensearch_service_url
+        self,
+        host,
+        port,
+        requests_queue,
+        destination_queue,
+        csv_path,
+        genius_token,
+        groq_api_key,
+        groq_model,
     ):
         self.rabbitmq_client = RobustRabbitMQClient(host, port)
 
         self.requests_queue = requests_queue
         self.destination_queue = destination_queue
 
-        self.opensearch_service_url = opensearch_service_url
+        self.repo = CsvLyricsRepository(csv_path)
+        self.groq_interactor = GroqAPIInteractor(groq_api_key, groq_model)
+        self.genius_interactor = GiniusInteractor(genius_token)
 
         self._process_task = None
 
@@ -49,7 +61,7 @@ class LyricsProcessor:
             body = message.body.decode("utf-8")
             data = json.loads(body)
 
-            # logging.info(f"Processing message: {data=}")
+            logging.info(f"Processing message: {data.get('type', 'unknown')}")
 
             processed_data = await self.process_single_request(data)
             logging.info(f"Processed data: {processed_data}")
@@ -78,57 +90,40 @@ class LyricsProcessor:
             logging.error(f"Unexpected error processing message: {e}")
             await message.nack(requeue=True)  # Requeue for retr
 
-    async def process_single_request(
-        self, msg: IncomingMessage
-    ) -> OutgoingMessage:  # TODO: Replace with actual recommendation system
-        request = (
-            msg["query"]
-            + ". Tracks: "
-            + " | ".join([self.process_single_track(x) for x in msg["songs_texts"]])
-        )
-        response = f"Cannot find recommendations for such request: {request}"
-        try:
-            async with httpx.AsyncClient() as client:
-                url = self.opensearch_service_url + "/search"
+    async def process_single_request(self, msg: IncomingMessage) -> OutgoingMessage:
+        songs_for_llm = []
 
-                post_response = await client.post(
-                    url,
-                    timeout=5,  # Set appropriate timeout
-                    json={
-                        "query": request,
-                        "size": 5,
-                    },
-                )
-                post_response.raise_for_status()
-                parsed_response = post_response.json()
-                print(f"{parsed_response=}")
-                response = (
-                    "🎶 На основе вашего запроса подобрали следующие композиции:\n\n```md\n"
-                    + "\n".join(
-                        [
-                            self.process_single_response_track(i, x)
-                            for i, x in enumerate(parsed_response["results"])
-                        ]
-                    )
-                    + "```"
-                )
+        for credit in msg["song_credits"]:
+            artist = credit["artist"]
+            track = credit["song"]
 
-        except Exception as e:
-            logging.error(
-                f"Cannot find recommendations for such request: {request}. Error: {e}"
+            lyrics = self.repo.find_lyrics(artist, track)
+
+            if not lyrics:
+                lyrics = self.genius_interactor.fetch_lyrics_from_api(artist, track)
+
+                # если успешно скачали — кладём в CSV
+                if lyrics and not str(lyrics).startswith("[Error fetching lyrics]"):
+                    self.repo.upsert_lyrics(artist, track, lyrics)
+
+            logging.info(
+                f"[processor] Fetched lyrics for {artist} - {track}: {lyrics}..."
             )
 
+            songs_for_llm.append(
+                {"artist": artist, "song": track, "lyrics": lyrics or ""}
+            )
+
+        # 1 LLM call for everything
+        llm_result = self.groq_interactor.analyze_songs_with_llm(songs_for_llm)
+
+        # возвращаем как вариант C (без lyrics)
         return {
             "id": msg["id"],
             "user_id": msg["user_id"],
-            "response": response,
+            "query": llm_result["query"],
+            "songs_texts": llm_result["songs_texts"],
         }
-
-    def process_single_track(self, text: SongText):
-        return f"{text['artist']}:{text['song']}"
-
-    def process_single_response_track(self, num: int, response_track: ResponseTrack):
-        return f"📀 {num}) {response_track['artist_name']} - {response_track['track_name']} ({response_track['release_date']}). Score: {response_track['score']}"
 
     async def forward_to_destination(self, data: OutgoingMessage) -> bool:
         """
@@ -151,8 +146,3 @@ class LyricsProcessor:
     def stop(self):
         if self._process_task:
             self._process_task.cancel()
-
-
-# eminem - Lose Yourself
-# eminem - Stan
-# eminem - Rap God

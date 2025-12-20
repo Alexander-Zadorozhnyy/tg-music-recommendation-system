@@ -1,7 +1,9 @@
-groq
-pika
-python-dotenv
 pandas
-lyricsgenius
+aio_pika
+python-dotenv
 requests
-
+beautifulsoup4
+lyricsgenius
+pydantic-settings
+pydentic
+groq

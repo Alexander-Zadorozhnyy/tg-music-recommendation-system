@@ -22,9 +22,8 @@ class CsvLyricsRepository:
     def find_lyrics(self, artist: str, track: str) -> Optional[str]:
         if not artist or not track or self.df.empty:
             return None
-        m = (
-            (self.df["artist_name"].str.lower() == artist.lower()) &
-            (self.df["track_name"].str.lower() == track.lower())
+        m = (self.df["artist_name"].str.lower() == artist.lower()) & (
+            self.df["track_name"].str.lower() == track.lower()
         )
         res = self.df[m]
         if res.empty:
@@ -36,16 +35,15 @@ class CsvLyricsRepository:
         if not artist or not track or not lyrics or not lyrics.strip():
             return
 
-        m = (
-            (self.df["artist_name"].str.lower() == artist.lower()) &
-            (self.df["track_name"].str.lower() == track.lower())
+        m = (self.df["artist_name"].str.lower() == artist.lower()) & (
+            self.df["track_name"].str.lower() == track.lower()
         )
 
         if self.df[m].empty:
             self.df.loc[len(self.df)] = {
                 "artist_name": artist,
                 "track_name": track,
-                "lyrics": lyrics
+                "lyrics": lyrics,
             }
         else:
             idx = self.df[m].index[0]

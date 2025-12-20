@@ -1,10 +1,11 @@
 # app/models.py
-from typing import TypedDict, List, NotRequired
+
+from typing import TypedDict, List
 
 
 class SongCredit(TypedDict):
     artist: str
-    track: str
+    song: str
 
 
 class IncomingMessage(TypedDict):
@@ -16,9 +17,9 @@ class IncomingMessage(TypedDict):
 
 class SongText(TypedDict):
     artist: str
-    track: str
-    summary: NotRequired[str]
-    keywords: NotRequired[List[str]]
+    song: str
+    summary: str
+    keywords: List[str]
 
 
 class OutgoingMessage(TypedDict):
