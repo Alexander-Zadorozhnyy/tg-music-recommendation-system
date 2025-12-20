@@ -56,7 +56,12 @@ async def get_music_statistic(message: Message, state: FSMContext):
     if stats["popular_queries"]:
         message_text += "🔍 <b>Частые запросы:</b>\n"
         for query, count in stats["popular_queries"][:5]:
-            message_text += f'• "{query[:30]}...": {count} раз\n'
+            message_text += f'• "{query[:30]}...": {count} раз\n\n'
+
+    if stats["active_days"]:
+        message_text += (
+            f"🔍 <b>Дней активного использования: {stats['active_days']}</b>\n"
+        )
 
     await message.answer(message_text, parse_mode="HTML")
 
