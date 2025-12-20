@@ -95,23 +95,23 @@ class RequestProcessor:
 
         for credit in msg["song_credits"]:
             artist = credit["artist"]
-            track = credit["song"]
+            song = credit["song"]
 
-            lyrics = self.repo.find_lyrics(artist, track)
+            lyrics = self.repo.find_lyrics(artist, song)
 
             if not lyrics:
-                lyrics = self.genius_interactor.fetch_lyrics_from_api(artist, track)
+                lyrics = self.genius_interactor.fetch_lyrics_from_api(artist, song)
 
                 # если успешно скачали — кладём в CSV
                 if lyrics and not str(lyrics).startswith("[Error fetching lyrics]"):
-                    self.repo.upsert_lyrics(artist, track, lyrics)
+                    self.repo.upsert_lyrics(artist, song, lyrics)
 
             logging.info(
-                f"[processor] Fetched lyrics for {artist} - {track}: {lyrics}..."
+                f"[processor] Fetched lyrics for {artist} - {song}: {lyrics}..."
             )
 
             songs_for_llm.append(
-                {"artist": artist, "song": track, "lyrics": lyrics or ""}
+                {"artist": artist, "song": song, "lyrics": lyrics or ""}
             )
 
         # 1 LLM call for everything

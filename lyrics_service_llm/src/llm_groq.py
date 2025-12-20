@@ -16,11 +16,11 @@ class GroqAPIInteractor:
 
     def analyze_songs_with_llm(self, songs: List[Dict[str, str]]) -> Dict[str, Any]:
         """
-        songs: [{artist, track, lyrics}]
+        songs: [{artist, song, lyrics}]
         returns строго:
         {
         "query": "...",
-        "songs_texts": [{"artist","track","summary","keywords":[...]}]
+        "songs_texts": [{"artist","song","summary","keywords":[...]}]
         }
         """
 
@@ -116,7 +116,7 @@ class GroqAPIInteractor:
             out.append(
                 {
                     "artist": s.get("artist", ""),
-                    "track": s.get("track", ""),
+                    "song": s.get("song", ""),
                     "summary": "Insufficient text was available to infer detailed themes confidently.",
                     "keywords": [
                         "unclear",

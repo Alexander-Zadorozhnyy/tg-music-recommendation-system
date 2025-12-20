@@ -170,6 +170,7 @@ async def process_tracks_input(message: Message, state: FSMContext):
                     [t.dict() for t in normalized.tracks], ensure_ascii=False
                 ),
                 query="Подбор похожих треков",
+                request_type="track",
             )
 
             session.add(request)
@@ -235,9 +236,7 @@ async def process_free_form_request(message: Message, state: FSMContext):
             await session.refresh(user)
 
         request = Request(
-            user_id=user.id,
-            song_credits="",
-            query=user_request,
+            user_id=user.id, song_credits="", query=user_request, request_type="free"
         )
         session.add(request)
         await session.commit()

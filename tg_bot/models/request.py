@@ -9,4 +9,5 @@ class Request(SQLModel, table=True):
     user_id: int = Field(foreign_key="users.id")
     song_credits: str = Field(default="", max_length=1000)
     query: str = Field(max_length=2000)
+    request_type: str = Field(max_length=15, default="tracks")
     created_at: datetime = Field(default_factory=datetime.utcnow)

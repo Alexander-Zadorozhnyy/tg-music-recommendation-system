@@ -12,16 +12,16 @@ class GiniusInteractor:
             excluded_terms=["(Remix)", "(Live)"],
         )
 
-    def fetch_lyrics_from_api(self, artist: str, track: str) -> str:
+    def fetch_lyrics_from_api(self, artist: str, song: str) -> str:
         """
         Возвращает текст песни или строку-ошибку вида:
         [Error fetching lyrics]: ...
         """
-        if not artist or not track:
-            return "[Error fetching lyrics]: Empty artist/track"
+        if not artist or not song:
+            return "[Error fetching lyrics]: Empty artist/song"
 
         try:
-            song = self._genius.search_song(title=track, artist=artist)
+            song = self._genius.search_song(title=song, artist=artist)
             if not song or not getattr(song, "lyrics", None):
                 return "[Error fetching lyrics]: Not found on Genius"
             return song.lyrics
