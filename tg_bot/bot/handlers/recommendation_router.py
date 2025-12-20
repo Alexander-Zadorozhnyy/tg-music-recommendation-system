@@ -7,22 +7,20 @@ from aiogram.types import Message
 
 from bot.states.bot_state import RecommendationStates
 from bot.utils.utils import (
-    get_response_based_on_free_form_request,
-    get_response_based_on_similar_tracks,
     smart_parse_tracks_input,
 )
 import bot.keyboards as kb
 from service.llm_connect import LLMService
-from models.response import Response
 from models.request import Request
 from models.user import User
 from sqlmodel import select
 from database.database import AsyncSessionLocal
+from database.config import get_settings
 
 from rabbitmq.aio_client import rabbitmq_client
-from models.track import TrackItem, TrackList
 
 recommendation_router = Router()
+settings = get_settings()
 
 
 @recommendation_router.message(F.text == "Найти рекомендации 🎧")
@@ -172,18 +170,11 @@ async def process_tracks_input(message: Message, state: FSMContext):
                     [t.dict() for t in normalized.tracks], ensure_ascii=False
                 ),
                 query="Подбор похожих треков",
+                request_type="track",
             )
 
             session.add(request)
             await session.commit()
-
-            # response = Response(
-            #     user_id=user.id,
-            #     request_id=request.id,
-            #     response_text=response_text,
-            # )
-            # session.add(response)
-            # await session.commit()
 
             msg = {
                 "id": request.id,
@@ -192,7 +183,7 @@ async def process_tracks_input(message: Message, state: FSMContext):
                 "song_credits": [t.dict() for t in normalized.tracks],
             }
             await rabbitmq_client.publish_message(
-                "requests", json.dumps(msg, ensure_ascii=False)
+                settings.QUEUE_REQUESTS, json.dumps(msg, ensure_ascii=False)
             )
         await message.answer(response_text)
         await state.clear()
@@ -227,16 +218,6 @@ async def process_free_form_request(message: Message, state: FSMContext):
         await state.clear()
         return
 
-    # Заглушка рекомендаций
-    recommendations = [
-        "Post Malone - Rockstar",
-        "Eminem - Rap God",
-        "The Weeknd - Blinding Lights",
-    ]
-    response_text = get_response_based_on_free_form_request(
-        user_request, recommendations
-    )
-
     # Сохраняем в БД
     async with AsyncSessionLocal() as session:
         result = await session.exec(
@@ -255,21 +236,21 @@ async def process_free_form_request(message: Message, state: FSMContext):
             await session.refresh(user)
 
         request = Request(
-            user_id=user.id,
-            song_credits="",
-            query=user_request,
+            user_id=user.id, song_credits="", query=user_request, request_type="free"
         )
         session.add(request)
         await session.commit()
         await session.refresh(request)
 
-        response = Response(
-            user_id=user.id,
-            request_id=request.id,
-            response_text=response_text,
-        )
-        session.add(response)
-        await session.commit()
+    msg = {
+        "id": request.id,
+        "user_id": user.id,
+        "query": user_request,
+        "songs_texts": [],
+    }
+    await rabbitmq_client.publish_message(
+        settings.QUEUE_LYRICS, json.dumps(msg, ensure_ascii=False)
+    )
 
-    await message.answer(response_text)
+    await message.answer("Запрос принят! ⏳ Скоро появятся рекомендации.")
     await state.clear()
