@@ -4,12 +4,13 @@ import logging
 
 import aio_pika
 
-
-from sqlalchemy.ext.asyncio import AsyncSession
-from database.database import get_session
+from database.config import get_settings
+from database.database import AsyncSessionLocal
 from models.request import Request
 from models.user import User
 from models.response import Response
+
+settings = get_settings()
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -17,16 +18,11 @@ logging.basicConfig(
 
 
 class MessageSender:
-    def __init__(
-        self,
-        bot,
-        rabbitmq_client,
-        response_queue,
-    ):
+    def __init__(self, bot, rabbitmq_client):
         self.bot = bot
         self.rabbitmq_client = rabbitmq_client
 
-        self.response_queue = response_queue
+        self.response_queue = settings.QUEUE_RESPONSE
 
         self._process_task = None
 
@@ -45,14 +41,14 @@ class MessageSender:
             body = message.body.decode("utf-8")
             data = json.loads(body)
 
-            request_id = data.get("request_id")
+            request_id = data.get("id")
             response_text = data.get("response")
 
             if not request_id or response_text is None:
                 raise KeyError("request_id or response")
 
             # Получаем сессию и данные из БД
-            async with get_session() as session:
+            async with AsyncSessionLocal() as session:
                 # Получаем запрос
                 request = await session.get(Request, request_id)
                 if not request:
