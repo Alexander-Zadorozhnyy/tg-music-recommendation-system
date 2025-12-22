@@ -22,7 +22,7 @@ async def call_mistral(prompt: str, model: str = "mistral-small-latest") -> str:
                     "model": model,
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.6,
-                    "max_tokens": 250,
+                    "max_tokens": 400,
                 },
                 timeout=10,
             )
