@@ -6,6 +6,11 @@ from typing import Optional
 
 class Settings(BaseSettings):
     GENIUS_API_TOKEN: Optional[str] = os.getenv("GENIUS_API_TOKEN", None)
+    GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY", None)
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile").strip()
+    GROQ_BASE_URL: str = os.getenv(
+        "GROQ_BASE_URL", "https://api.groq.com/openai/v1"
+    ).strip()
 
     RABBIT_HOST: str = os.getenv("RABBIT_HOST", "rabbitmq")
     RABBIT_PORT: int = int(os.getenv("RABBIT_PORT", 5432))
