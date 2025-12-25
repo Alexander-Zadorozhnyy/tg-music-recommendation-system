@@ -81,16 +81,42 @@ class LyricsProcessor:
             await message.nack(requeue=True)  # Requeue for retr
 
     async def process_single_request(self, msg: IncomingMessage) -> OutgoingMessage:
-        songs_texts = msg["songs_texts"]
+        request = (
+            msg["query"]
+            + ". Tracks: "
+            + " | ".join([self.process_single_track(x) for x in msg["songs_texts"]])
+        )
+
         fallback_response = (
             "К сожалению, не удалось сгенерировать персонализированную рекомендацию."
         )
-
         try:
-            prompt = build_recommendation_prompt(songs_texts)
-            recommendation = await call_mistral(prompt)
+            async with httpx.AsyncClient() as client:
+                url = self.opensearch_service_url + "/search"
+
+                post_response = await client.post(
+                    url,
+                    timeout=5,  # Set appropriate timeout
+                    json={
+                        "query": request,
+                        "size": 5,
+                    },
+                )
+                post_response.raise_for_status()
+                parsed_response = post_response.json()
+                print(f"{parsed_response=}")
+
+                prompt = build_recommendation_prompt(parsed_response["results"])
+                recommendation = await call_mistral(prompt)
         except Exception as e:
-            logging.error(f"LLM processing failed: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+            logging.error(
+                f"Cannot find recommendations for such request: {request}. Error: {e}"
+            )
+
             recommendation = fallback_response
 
         return {

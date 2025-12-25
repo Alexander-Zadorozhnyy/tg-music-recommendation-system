@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import re
 
 import aio_pika
 
@@ -68,7 +69,7 @@ class MessageSender:
                 # Отправляем сообщение
                 await self.bot.send_message(
                     chat_id=telegram_chat_id,
-                    text=response_text,
+                    text=self.escape_markdown_v2(response_text),
                     parse_mode="MarkdownV2",
                 )
 
@@ -99,11 +100,11 @@ class MessageSender:
             logging.error(f"Unexpected error: {e}", exc_info=True)
             await message.nack(requeue=True)
 
+    def escape_markdown_v2(self, text):
+        """Escape special characters for MarkdownV2"""
+        escape_chars = r"_[]()~`>#+-=|{}.!"
+        return re.sub(f"([{re.escape(escape_chars)}])", r"\\\1", text)
+
     def stop(self):
         if self._process_task:
             self._process_task.cancel()
-
-
-# eminem - Lose Yourself
-# eminem - Stan
-# eminem - Rap God

@@ -56,12 +56,32 @@ async def get_music_statistic(message: Message, state: FSMContext):
     if stats["popular_queries"]:
         message_text += "🔍 <b>Частые запросы:</b>\n"
         for query, count in stats["popular_queries"][:5]:
-            message_text += f'• "{query[:30]}...": {count} раз\n\n'
+            # Handle short queries
+            display_query = query[:30] + "..." if len(query) > 30 else query
+            message_text += f'• "{display_query}": {count} раз\n'
+        message_text += "\n"
 
     if stats["active_days"]:
-        message_text += (
-            f"🔍 <b>Дней активного использования: {stats['active_days']}</b>\n"
-        )
+        message_text += "🗓️ <b>Активность по дням недели:</b>\n"
+        days_map = {
+            0: "Понедельник",
+            1: "Вторник",
+            2: "Среда",
+            3: "Четверг",
+            4: "Пятница",
+            5: "Суббота",
+            6: "Воскресенье",
+        }
+
+        # Sort by count (most active days first)
+        sorted_days = sorted(stats["active_days"], key=lambda x: x[1], reverse=True)
+
+        for day_num, count in sorted_days[:3]:  # Show top 3 days
+            day_name = days_map.get(int(day_num), f"День {day_num}")
+            message_text += f"• {day_name}: {count} запросов\n"
+
+    if stats["total_active_days"]:
+        message_text += f"📅 <b>Дней с активностью: {stats['total_active_days']}</b>\n\n"
 
     await message.answer(message_text, parse_mode="HTML")
 
@@ -93,35 +113,35 @@ async def get_enhanced_statistics(message: Message):
         total_requests = len(requests_data)
         total_responses = sum(r.responses_count for r in requests_data)
 
-        # Get time-based statistics
-        if requests_data:
-            # Requests by hour of day
-            hour_stmt = (
-                select(
-                    func.extract("hour", Request.created_at).label("hour"),
-                    func.count(Request.id).label("count"),
-                )
-                .where(Request.user_id == user.id)
-                .group_by("hour")
-                .order_by("hour")
+        # Get most active days of week (0=Monday, 6=Sunday)
+        weekday_stmt = (
+            select(
+                func.extract("dow", Request.created_at).label("weekday"),
+                func.count(Request.id).label("count"),
             )
+            .where(Request.user_id == user.id)
+            .group_by("weekday")
+            .order_by(func.count(Request.id).desc())
+        )
 
-            hour_result = await session.execute(hour_stmt)
-            peak_hours = hour_result.all()
+        weekday_result = await session.execute(weekday_stmt)
+        active_days = [
+            (int(row.weekday), int(row.count)) for row in weekday_result.all()
+        ]
 
-            # Most active day of week
-            weekday_stmt = (
-                select(
-                    func.extract("dow", Request.created_at).label("weekday"),
-                    func.count(Request.id).label("count"),
-                )
-                .where(Request.user_id == user.id)
-                .group_by("weekday")
-                .order_by("count")
+        # Get most active hours of day
+        hour_stmt = (
+            select(
+                func.extract("hour", Request.created_at).label("hour"),
+                func.count(Request.id).label("count"),
             )
+            .where(Request.user_id == user.id)
+            .group_by("hour")
+            .order_by("hour")
+        )
 
-            weekday_result = await session.execute(weekday_stmt)
-            active_days = weekday_result.all()
+        hour_result = await session.execute(hour_stmt)
+        peak_hours = [(int(row.hour), int(row.count)) for row in hour_result.all()]
 
         # Get most common queries
         query_stmt = (
@@ -133,15 +153,23 @@ async def get_enhanced_statistics(message: Message):
         )
 
         query_result = await session.execute(query_stmt)
-        popular_queries = query_result.all()
+        popular_queries = [(row.query, int(row.count)) for row in query_result.all()]
+
+        # Calculate unique active days count
+        unique_days_stmt = select(func.date(Request.created_at).distinct()).where(
+            Request.user_id == user.id
+        )
+        unique_days_result = await session.execute(unique_days_stmt)
+        total_active_days = len(unique_days_result.all())
 
         # Prepare comprehensive statistics
         stats = {
             "total_requests": total_requests,
             "total_responses": total_responses,
-            "peak_hours": peak_hours if "peak_hours" in locals() else [],
+            "peak_hours": peak_hours,
             "popular_queries": popular_queries,
-            "active_days": active_days if "active_days" in locals() else [],
+            "active_days": active_days,
+            "total_active_days": total_active_days,  # New field: count of unique days with activity
             "response_rate": total_responses / total_requests
             if total_requests > 0
             else 0,
