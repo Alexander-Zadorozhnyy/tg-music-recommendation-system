@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     RABBIT_USER: str = os.getenv("RABBIT_USER", "guest")
     RABBIT_PASS: str = os.getenv("RABBIT_PASS", "guest")
 
+    QUEUE_REQUESTS: str = os.getenv("QUEUE_REQUESTS", "requests")
+    QUEUE_LYRICS: str = os.getenv("QUEUE_LYRICS", "lyrics")
     QUEUE_RESPONSE: str = os.getenv("QUEUE_RESPONSE", "response")
 
     MISTRAL_API_KEY: Optional[str] = os.getenv("MISTRAL_API_KEY", None)

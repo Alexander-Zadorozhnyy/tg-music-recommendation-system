@@ -104,6 +104,11 @@ QUEUE_RESPONSE = "response"
 # API keys
 MISTRAL_API_KEY = your_token_here
 GENIUS_API_TOKEN = your_token_here
+GROQ_API_KEY=your_token_here
+
+# Groq config
+GROQ_MODEL=llama-3.1-8b-instant
+QUERY_MODE=summary
 
 # Opensearch url
 OPENSEARCH_SERVICE_URL = "http://opensearch_service:8009"
