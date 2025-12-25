@@ -1,14 +1,18 @@
+# app/repo_csv.py
+import os
 import pandas as pd
 from typing import Optional
 
 
 class CsvLyricsRepository:
     def __init__(self, csv_path: str):
+        self.csv_path = csv_path
         try:
             self.df = pd.read_csv(csv_path)
         except Exception as e:
             print(f"[repo_csv] Can't read {csv_path}: {e}")
             self.df = pd.DataFrame(columns=["artist_name", "track_name", "lyrics"])
+
         self.df.columns = [c.strip().lower() for c in self.df.columns]
         for col in ("artist_name", "track_name", "lyrics"):
             if col not in self.df.columns:
@@ -24,4 +28,26 @@ class CsvLyricsRepository:
         res = self.df[m]
         if res.empty:
             return None
-        return str(res.iloc[0]["lyrics"]) or None
+        val = str(res.iloc[0]["lyrics"]) or ""
+        return val if val.strip() else None
+
+    def upsert_lyrics(self, artist: str, song: str, lyrics: str) -> None:
+        if not artist or not song or not lyrics or not lyrics.strip():
+            return
+
+        m = (self.df["artist_name"].str.lower() == artist.lower()) & (
+            self.df["track_name"].str.lower() == song.lower()
+        )
+
+        if self.df[m].empty:
+            self.df.loc[len(self.df)] = {
+                "artist_name": artist,
+                "track_name": song,
+                "lyrics": lyrics,
+            }
+        else:
+            idx = self.df[m].index[0]
+            self.df.at[idx, "lyrics"] = lyrics
+
+        os.makedirs(os.path.dirname(self.csv_path), exist_ok=True)
+        self.df.to_csv(self.csv_path, index=False)

@@ -24,6 +24,8 @@ async def start_worker():
             destination_queue=settings.QUEUE_OUT,
             csv_path=settings.CSV_PATH,
             genius_token=settings.GENIUS_API_TOKEN,
+            groq_api_key=settings.GROQ_API_KEY,
+            groq_model=settings.GROQ_MODEL,
         )
         processor.start()
 

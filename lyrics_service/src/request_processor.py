@@ -5,9 +5,10 @@ import logging
 import lyricsgenius
 import aio_pika
 
+from src.lyrics_api import GiniusInteractor
+from src.llm_groq import GroqAPIInteractor
 from src.models import IncomingMessage, OutgoingMessage, SongText
 from src.repo_csv import CsvLyricsRepository
-from src.text_compressor import extract_keywords
 
 from rabbitmq.aio_client import RobustRabbitMQClient
 
@@ -19,7 +20,15 @@ logging.basicConfig(
 
 class RequestProcessor:
     def __init__(
-        self, host, port, requests_queue, destination_queue, csv_path, genius_token
+        self,
+        host,
+        port,
+        requests_queue,
+        destination_queue,
+        csv_path,
+        genius_token,
+        groq_api_key,
+        groq_model,
     ):
         self.rabbitmq_client = RobustRabbitMQClient(host, port)
 
@@ -27,9 +36,9 @@ class RequestProcessor:
         self.destination_queue = destination_queue
 
         self.repo = CsvLyricsRepository(csv_path)
-        self.genius = lyricsgenius.Genius(
-            genius_token, skip_non_songs=True, excluded_terms=["(Remix)", "(Live)"]
-        )
+        self.groq_interactor = GroqAPIInteractor(groq_api_key, groq_model)
+        self.genius_interactor = GiniusInteractor(genius_token)
+
         self._process_task = None
 
     def start(self):
@@ -82,39 +91,39 @@ class RequestProcessor:
             await message.nack(requeue=True)  # Requeue for retr
 
     async def process_single_request(self, msg: IncomingMessage) -> OutgoingMessage:
-        results: list[SongText] = []
+        songs_for_llm = []
 
         for credit in msg["song_credits"]:
             artist = credit["artist"]
             song = credit["song"]
 
             lyrics = self.repo.find_lyrics(artist, song)
+
             if not lyrics:
-                lyrics = self.fetch_lyrics_from_api(artist, song)
+                lyrics = self.genius_interactor.fetch_lyrics_from_api(artist, song)
 
-            keywords = extract_keywords(lyrics)
+                # если успешно скачали — кладём в CSV
+                if lyrics and not str(lyrics).startswith("[Error fetching lyrics]"):
+                    self.repo.upsert_lyrics(artist, song, lyrics)
 
-            results.append(
-                {"artist": artist, "song": song, "lyrics": lyrics, "keywords": keywords}
+            logging.info(
+                f"[processor] Fetched lyrics for {artist} - {song}: {lyrics}..."
             )
 
+            songs_for_llm.append(
+                {"artist": artist, "song": song, "lyrics": lyrics or ""}
+            )
+
+        # 1 LLM call for everything
+        llm_result = self.groq_interactor.analyze_songs_with_llm(songs_for_llm)
+
+        # возвращаем как вариант C (без lyrics)
         return {
             "id": msg["id"],
             "user_id": msg["user_id"],
-            "query": msg["query"],
-            "songs_texts": results,
+            "query": llm_result["query"],
+            "songs_texts": llm_result["songs_texts"],
         }
-
-    def fetch_lyrics_from_api(
-        self, artist: str, song: str
-    ) -> str:  # TODO: can be rewritten by agenius for async
-        try:
-            song = self.genius.search_song(song, artist)
-            if song and song.lyrics:
-                return song.lyrics
-            return f"Lyrics not found for {artist} - {song}"
-        except Exception as e:
-            return f"[Error fetching lyrics]: {str(e)}"
 
     async def forward_to_destination(self, data: OutgoingMessage) -> bool:
         """

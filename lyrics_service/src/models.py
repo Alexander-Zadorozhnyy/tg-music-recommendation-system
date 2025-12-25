@@ -18,7 +18,7 @@ class IncomingMessage(TypedDict):
 class SongText(TypedDict):
     artist: str
     song: str
-    lyrics: str
+    summary: str
     keywords: List[str]
 
 
