@@ -7,6 +7,8 @@ import aio_pika
 import httpx
 
 from src.models import IncomingMessage, OutgoingMessage, ResponseTrack, SongText
+from src.prompt_builder import build_recommendation_prompt
+from src.llm_client import call_mistral
 
 from rabbitmq.aio_client import RobustRabbitMQClient
 
@@ -78,15 +80,16 @@ class LyricsProcessor:
             logging.error(f"Unexpected error processing message: {e}")
             await message.nack(requeue=True)  # Requeue for retr
 
-    async def process_single_request(
-        self, msg: IncomingMessage
-    ) -> OutgoingMessage:  # TODO: Replace with actual recommendation system
+    async def process_single_request(self, msg: IncomingMessage) -> OutgoingMessage:
         request = (
             msg["query"]
             + ". Tracks: "
             + " | ".join([self.process_single_track(x) for x in msg["songs_texts"]])
         )
-        response = f"Cannot find recommendations for such request: {request}"
+
+        fallback_response = (
+            "К сожалению, не удалось сгенерировать персонализированную рекомендацию."
+        )
         try:
             async with httpx.AsyncClient() as client:
                 url = self.opensearch_service_url + "/search"
@@ -102,26 +105,24 @@ class LyricsProcessor:
                 post_response.raise_for_status()
                 parsed_response = post_response.json()
                 print(f"{parsed_response=}")
-                response = (
-                    "🎶 На основе вашего запроса подобрали следующие композиции:\n\n```md\n"
-                    + "\n".join(
-                        [
-                            self.process_single_response_track(i, x)
-                            for i, x in enumerate(parsed_response["results"])
-                        ]
-                    )
-                    + "```"
-                )
 
+                prompt = build_recommendation_prompt(parsed_response["results"])
+                recommendation = await call_mistral(prompt)
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+
             logging.error(
                 f"Cannot find recommendations for such request: {request}. Error: {e}"
             )
 
+            recommendation = fallback_response
+
         return {
             "id": msg["id"],
             "user_id": msg["user_id"],
-            "response": response,
+            "response": recommendation,
         }
 
     def process_single_track(self, text: SongText):
